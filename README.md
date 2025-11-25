@@ -1,18 +1,5 @@
 # RACC: MSSP'ler ve Kurumlar İçin Trellix SIEM Yönetiminde Multi-Tenant Devrimi
 
-Siber güvenlik dünyasında, özellikle Managed Security Service Provider (MSSP) olarak hizmet veren firmalar veya birden fazla kurumsal müşteriye SIEM danışmanlığı yapan ekipler için en büyük kabuslardan biri "Yönetilebilirlik"tir.
-
-Her müşteri için ayrı VPN'ler, farklı arayüzler, manuel kural kopyalamalar ve "Acaba A müşterisinin kuralını yanlışlıkla B müşterisine mi yükledim?" korkusu...
-
-Geliştirdiğim **RACC (Rule & Alarm Control Center)**, tam da bu kaosu ortadan kaldırmak için tasarlandı. RACC, kurumsal firmaların kendi iç SIEM yönetimini kolaylaştırmasının ötesinde, MSSP'ler için gerçek bir Multi-Tenant (Çok Kiracılı) yönetim katmanı sunar.
-
-## Neden RACC? Özellikle MSSP'ler İçin...
-
-RACC, Trellix (eski adıyla McAfee) SIEM altyapısı için geliştirilmiş, Python (Flask) ve React tabanlı modern bir yönetim platformudur. Ancak onu sıradan bir editörden ayıran en büyük özellik mimarisidir.
-
-### 1. Gerçek Multi-Tenant Mimarisi ve Veri İzolasyonu
-
-MSSP'ler için en kritik konu müşteri verilerinin izolasyonudur.
 
 **Sorun:** Geleneksel yöntemlerde analistler müşteriler arasında geçiş yaparken hata yapmaya açıktır.
 
