@@ -16,6 +16,7 @@ import json
 import ssl
 from urllib.parse import urljoin
 from urllib import request as urllib_request
+from typing import Union
 
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import NotFound
@@ -114,7 +115,7 @@ def _ensure_customer_setting(customer_id: int) -> CustomerSetting:
     return setting
 
 
-def _merge_with_defaults(defaults: dict, overrides: dict | None) -> dict:
+def _merge_with_defaults(defaults: dict, overrides: Union[dict, None]) -> dict:
     """Merge defaults with overrides."""
     data = deepcopy(defaults)
     if overrides:
