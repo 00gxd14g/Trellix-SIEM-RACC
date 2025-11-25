@@ -80,3 +80,5 @@ backend/logs/trellix-api-error.log
 backend/logs/trellix-api.log
 logs/trellix-api-error.log
 logs/trellix-api.log
+!frontend/src/lib/api.js
+!frontend/src/lib/utils.js
