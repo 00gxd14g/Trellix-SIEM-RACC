@@ -1,0 +1,766 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "McAfee SIEM Alarm Editor API",
+    "description": "REST API for managing SIEM customers, rules, and alarms",
+    "version": "2.0.0",
+    "contact": {
+      "name": "McAfee SIEM Alarm Editor",
+      "email": "support@example.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check endpoint",
+        "description": "Check if the API is running",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "healthy" },
+                    "message": { "type": "string", "example": "McAfee SIEM Alarm Editor API is running" },
+                    "version": { "type": "string", "example": "1.0.0" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get all customers",
+        "description": "Retrieve a list of all customers",
+        "responses": {
+          "200": {
+            "description": "List of customers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "customers": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Customer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Create a new customer",
+        "description": "Create a new customer with provided information",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "Acme Corporation" },
+                  "description": { "type": "string", "example": "A sample customer" },
+                  "contact_email": { "type": "string", "format": "email", "example": "contact@acme.com" },
+                  "contact_phone": { "type": "string", "example": "+1-555-0123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "customer": { "$ref": "#/components/schemas/Customer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get customer by ID",
+        "description": "Retrieve detailed information about a specific customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "customer": { "$ref": "#/components/schemas/CustomerDetail" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Update customer",
+        "description": "Update customer information",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "contact_email": { "type": "string", "format": "email" },
+                  "contact_phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "customer": { "$ref": "#/components/schemas/Customer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Delete customer",
+        "description": "Delete a customer and all associated data",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}/files/upload": {
+      "post": {
+        "tags": ["Files"],
+        "summary": "Upload XML file",
+        "description": "Upload and process rule.xml or alarm.xml file for a customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "XML file to upload"
+                  },
+                  "file_type": {
+                    "type": "string",
+                    "enum": ["rule", "alarm"],
+                    "description": "Type of XML file"
+                  }
+                },
+                "required": ["file", "file_type"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded and processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "file": { "$ref": "#/components/schemas/CustomerFile" },
+                    "validation": { "$ref": "#/components/schemas/ValidationResult" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid file or file type",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}/rules": {
+      "get": {
+        "tags": ["Rules"],
+        "summary": "Get customer rules",
+        "description": "Retrieve all rules for a specific customer with optional filtering",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Search term for rule name, ID, or SigID"
+          },
+          {
+            "name": "severity_min",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "description": "Minimum severity filter"
+          },
+          {
+            "name": "severity_max",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "description": "Maximum severity filter"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "rules": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Rule" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}/rules/generate-alarms": {
+      "post": {
+        "tags": ["Rules"],
+        "summary": "Generate alarms from rules",
+        "description": "Generate alarms for selected rules",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rule_ids": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "description": "Array of rule IDs to generate alarms for"
+                  }
+                },
+                "required": ["rule_ids"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alarms generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "generated_alarms": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Alarm" }
+                    },
+                    "generated_count": { "type": "integer" },
+                    "errors": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}/alarms": {
+      "get": {
+        "tags": ["Alarms"],
+        "summary": "Get customer alarms",
+        "description": "Retrieve all alarms for a specific customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of alarms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "alarms": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Alarm" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Alarms"],
+        "summary": "Create alarm",
+        "description": "Create a new alarm for a customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "High Severity Alert" },
+                  "severity": { "type": "integer", "minimum": 0, "maximum": 100 },
+                  "match_value": { "type": "string", "example": "47|6000114" },
+                  "match_field": { "type": "string", "default": "DSIDSigID" },
+                  "condition_type": { "type": "integer", "default": 14 },
+                  "note": { "type": "string" }
+                },
+                "required": ["name", "severity", "match_value"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alarm created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "alarm": { "$ref": "#/components/schemas/Alarm" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}/analysis/coverage": {
+      "get": {
+        "tags": ["Analysis"],
+        "summary": "Get coverage analysis",
+        "description": "Get rule-alarm coverage analysis for a customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coverage analysis data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "coverage": { "$ref": "#/components/schemas/CoverageAnalysis" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}/analysis/generate-missing": {
+      "post": {
+        "tags": ["Analysis"],
+        "summary": "Generate missing alarms",
+        "description": "Generate alarms for rules that don't have corresponding alarms",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Customer ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "min_severity": { "type": "integer", "minimum": 0, "maximum": 100, "default": 0 },
+                  "max_severity": { "type": "integer", "minimum": 0, "maximum": 100, "default": 100 },
+                  "rule_types": {
+                    "type": "array",
+                    "items": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Missing alarms generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "generated_count": { "type": "integer" },
+                    "generated_alarms": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Alarm" }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Acme Corporation" },
+          "description": { "type": "string", "example": "A sample customer" },
+          "contact_email": { "type": "string", "format": "email", "example": "contact@acme.com" },
+          "contact_phone": { "type": "string", "example": "+1-555-0123" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "file_count": { "type": "integer", "example": 2 },
+          "rule_count": { "type": "integer", "example": 150 },
+          "alarm_count": { "type": "integer", "example": 75 }
+        }
+      },
+      "CustomerDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Customer" },
+          {
+            "type": "object",
+            "properties": {
+              "files": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/CustomerFile" }
+              },
+              "recent_validations": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/ValidationLog" }
+              }
+            }
+          }
+        ]
+      },
+      "CustomerFile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "customer_id": { "type": "integer" },
+          "file_type": { "type": "string", "enum": ["rule", "alarm"] },
+          "filename": { "type": "string", "example": "rules.xml" },
+          "file_size": { "type": "integer", "example": 1024000 },
+          "upload_date": { "type": "string", "format": "date-time" },
+          "validation_status": { "type": "string", "enum": ["valid", "invalid", "pending"] },
+          "validation_errors": { "type": "string" }
+        }
+      },
+      "Rule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "customer_id": { "type": "integer" },
+          "rule_id": { "type": "string", "example": "47-6000114" },
+          "name": { "type": "string", "example": "Suspicious Login Activity" },
+          "description": { "type": "string" },
+          "severity": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "sig_id": { "type": "string", "example": "6000114" },
+          "rule_type": { "type": "integer" },
+          "revision": { "type": "integer" },
+          "origin": { "type": "integer" },
+          "action": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Alarm": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "customer_id": { "type": "integer" },
+          "name": { "type": "string", "example": "High Severity Alert" },
+          "min_version": { "type": "string", "example": "11.6.14" },
+          "severity": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "match_field": { "type": "string", "example": "DSIDSigID" },
+          "match_value": { "type": "string", "example": "47|6000114" },
+          "condition_type": { "type": "integer" },
+          "assignee_id": { "type": "integer" },
+          "esc_assignee_id": { "type": "integer" },
+          "note": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ValidationResult": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "errors": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "warnings": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "ValidationLog": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "customer_id": { "type": "integer" },
+          "file_type": { "type": "string" },
+          "validation_type": { "type": "string" },
+          "status": { "type": "string", "enum": ["success", "warning", "error"] },
+          "message": { "type": "string" },
+          "details": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CoverageAnalysis": {
+        "type": "object",
+        "properties": {
+          "total_rules": { "type": "integer" },
+          "total_alarms": { "type": "integer" },
+          "rules_with_sig_id": { "type": "integer" },
+          "rules_without_sig_id": { "type": "integer" },
+          "rules_with_alarms": { "type": "integer" },
+          "rules_without_alarms": { "type": "integer" },
+          "alarms_with_rules": { "type": "integer" },
+          "alarms_without_rules": { "type": "integer" },
+          "rule_coverage_percentage": { "type": "number", "format": "float" },
+          "alarm_coverage_percentage": { "type": "number", "format": "float" },
+          "total_relationships": { "type": "integer" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "per_page": { "type": "integer" },
+          "total": { "type": "integer" },
+          "pages": { "type": "integer" },
+          "has_next": { "type": "boolean" },
+          "has_prev": { "type": "boolean" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": { "type": "string", "example": "Error message" }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "System",
+      "description": "System health and status endpoints"
+    },
+    {
+      "name": "Customers",
+      "description": "Customer management operations"
+    },
+    {
+      "name": "Files",
+      "description": "File upload and management operations"
+    },
+    {
+      "name": "Rules",
+      "description": "Rule management and analysis operations"
+    },
+    {
+      "name": "Alarms",
+      "description": "Alarm management operations"
+    },
+    {
+      "name": "Analysis",
+      "description": "Coverage analysis and relationship detection operations"
+    }
+  ]
+}

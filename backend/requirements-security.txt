@@ -1,0 +1,39 @@
+# Security Enhancement Dependencies
+# Add these to your main requirements.txt file
+
+# Rate Limiting
+Flask-Limiter==3.5.0
+redis==5.0.1
+
+# Input Validation
+marshmallow==3.20.1
+marshmallow-sqlalchemy==0.29.0
+email-validator==2.1.0
+
+# XSS Protection
+bleach==6.1.0
+MarkupSafe==2.1.3
+
+# Session Management
+Flask-Session==0.5.0
+cachelib==0.10.2
+
+# Security Headers
+Flask-Talisman==1.1.0
+
+# Password Hashing (for future authentication)
+bcrypt==4.1.2
+argon2-cffi==23.1.0
+
+# CSRF Protection (included in Flask-WTF)
+Flask-WTF==1.2.1
+WTForms==3.1.1
+
+# Additional Security Tools
+cryptography==41.0.7
+python-dotenv==1.0.0
+
+# For testing security features
+pytest-security==0.1.0
+safety==2.3.5
+bandit==1.7.5

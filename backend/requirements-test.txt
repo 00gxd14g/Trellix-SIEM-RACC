@@ -1,0 +1,6 @@
+# Testing dependencies for Trellix-Alarm-MNGT-WEB
+pytest>=7.0.0
+pytest-flask>=1.2.0
+pytest-cov>=4.0.0
+pytest-benchmark>=3.4.0
+memory-profiler>=0.60.0

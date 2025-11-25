@@ -1,0 +1,26 @@
+# Core Flask Dependencies
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-SQLAlchemy==3.1.1
+flask-swagger-ui==4.11.1
+Werkzeug==3.0.1
+python-dotenv==1.0.0
+
+# XML Processing
+lxml==4.9.3
+
+# Database Migrations
+Flask-Migrate==4.0.5
+alembic==1.13.0
+
+# Caching (Redis is optional)
+redis==5.0.1
+
+# Performance and Monitoring
+SQLAlchemy-Utils==0.41.1
+
+# Optional: For PostgreSQL support (production deployments)
+# psycopg2-binary==2.9.9
+
+# Optional: For MySQL support (production deployments)
+# PyMySQL==1.1.0

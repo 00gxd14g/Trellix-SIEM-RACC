@@ -1,0 +1,14 @@
+{
+  "plugins": ["import"],
+  "rules": {
+    "import/no-unresolved": "error",
+    "react-refresh/only-export-components": "warn",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "settings": {
+    "import/resolver": {
+      "node": { "extensions": [".js", ".jsx"] },
+      "alias": { "map": [["@", "./src"]], "extensions": [".js", ".jsx"] }
+    }
+  }
+}

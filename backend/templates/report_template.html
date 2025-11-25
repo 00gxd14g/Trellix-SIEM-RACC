@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Trellix RACC - Security Coverage Report</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+    }
+  </style>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0073E6",
+            "background-light": "#FFFFFF",
+            "background-dark": "#101922",
+            "severity-critical": "#D92D20",
+            "severity-high": "#F79009",
+            "severity-medium": "#FDB022",
+            "severity-low": "#32D583",
+            "text-primary-light": "#1E1E1E",
+            "text-secondary-light": "#617589",
+            "border-light": "#CCCCCC",
+          },
+          fontFamily: {
+            "display": ["Manrope", "sans-serif"]
+          },
+          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+        },
+      },
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer base {
+            body {
+                @apply font-display bg-background-light dark:bg-background-dark text-text-primary-light dark:text-white;
+            }
+        }
+    </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll('[data-height]').forEach(el => {
+        el.style.height = el.dataset.height + '%';
+      });
+    });
+  </script>
+</head>
+
+<body class="bg-background-light">
+  <div class="relative flex h-auto min-h-screen w-full flex-col font-display group/design-root overflow-x-hidden">
+    <div class="layout-container flex h-full grow flex-col">
+      <main class="flex flex-1 justify-center py-5">
+        <div class="layout-content-container flex flex-col max-w-[960px] flex-1 px-4 sm:px-8">
+          <!-- PageHeading -->
+          <header class="flex flex-wrap justify-between gap-4 py-8 border-b border-border-light">
+            <div class="flex flex-col gap-2">
+              <p class="text-text-primary-light text-4xl font-black leading-tight tracking-[-0.033em]">Security Coverage
+                Report</p>
+              <p class="text-text-secondary-light text-base font-normal leading-normal">Customer: {{ customer_name }} |
+                Generated: {{ generated_date }}</p>
+            </div>
+            <div class="flex items-center">
+              <p class="text-xl font-bold text-primary">Trellix RACC</p>
+            </div>
+          </header>
+          <!-- Executive Overview -->
+          <section class="py-8">
+            <h2 class="text-text-primary-light text-[22px] font-bold leading-tight tracking-[-0.015em] pb-5">Executive
+              Overview</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="flex flex-col gap-2 rounded-xl p-6 border border-border-light bg-white">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-text-secondary-light">gavel</span>
+                  <p class="text-text-primary-light text-base font-medium leading-normal">Total Rules</p>
+                </div>
+                <p class="text-text-primary-light tracking-light text-4xl font-bold leading-tight">{{ total_rules }}</p>
+              </div>
+              <div class="flex flex-col gap-2 rounded-xl p-6 border border-border-light bg-white">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-text-secondary-light">notifications_active</span>
+                  <p class="text-text-primary-light text-base font-medium leading-normal">Total Alarms</p>
+                </div>
+                <p class="text-text-primary-light tracking-light text-4xl font-bold leading-tight">{{ total_alarms }}
+                </p>
+              </div>
+              <div class="flex flex-col gap-2 rounded-xl p-6 border border-border-light bg-white">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-text-secondary-light">shield</span>
+                  <p class="text-text-primary-light text-base font-medium leading-normal">Coverage Score</p>
+                </div>
+                <p class="text-text-primary-light tracking-light text-4xl font-bold leading-tight">{{ coverage_score }}%
+                </p>
+              </div>
+            </div>
+          </section>
+          <!-- Analysis Details -->
+          <section class="py-8">
+            <h2 class="text-text-primary-light text-[22px] font-bold leading-tight tracking-[-0.015em] pb-5">Analysis
+              Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Rule Severity Distribution -->
+              <div class="flex flex-col gap-4 p-6 border border-border-light rounded-xl">
+                <p class="text-text-primary-light text-lg font-bold leading-normal">Rule Severity Distribution</p>
+                <div class="grid grid-flow-col gap-6 grid-rows-[1fr_auto] items-end justify-items-center h-56 pt-4">
+                  <div class="w-full flex flex-col items-center justify-end h-full">
+                    <div class="bg-severity-critical w-full rounded-t" data-height="{{ rule_severity_critical_pct }}">
+                    </div>
+                    <p class="text-text-secondary-light text-sm font-bold leading-normal pt-2">Critical</p>
+                  </div>
+                  <div class="w-full flex flex-col items-center justify-end h-full">
+                    <div class="bg-severity-high w-full rounded-t" data-height="{{ rule_severity_high_pct }}"></div>
+                    <p class="text-text-secondary-light text-sm font-bold leading-normal pt-2">High</p>
+                  </div>
+                  <div class="w-full flex flex-col items-center justify-end h-full">
+                    <div class="bg-severity-medium w-full rounded-t" data-height="{{ rule_severity_medium_pct }}">
+                    </div>
+                    <p class="text-text-secondary-light text-sm font-bold leading-normal pt-2">Medium</p>
+                  </div>
+                  <div class="w-full flex flex-col items-center justify-end h-full">
+                    <div class="bg-severity-low w-full rounded-t" data-height="{{ rule_severity_low_pct }}"></div>
+                    <p class="text-text-secondary-light text-sm font-bold leading-normal pt-2">Low</p>
+                  </div>
+                </div>
+              </div>
+              <!-- Alarm Severity Distribution -->
+              <div class="flex flex-col gap-4 p-6 border border-border-light rounded-xl">
+                <p class="text-text-primary-light text-lg font-bold leading-normal">Alarm Severity Distribution</p>
+                <div class="space-y-4 pt-2">
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full bg-severity-critical"></div>
+                      <p class="text-text-primary-light text-base font-medium">Critical</p>
+                    </div>
+                    <p class="font-semibold text-text-primary-light">{{ alarm_severity_critical_count }}</p>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full bg-severity-high"></div>
+                      <p class="text-text-primary-light text-base font-medium">High</p>
+                    </div>
+                    <p class="font-semibold text-text-primary-light">{{ alarm_severity_high_count }}</p>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full bg-severity-medium"></div>
+                      <p class="text-text-primary-light text-base font-medium">Medium</p>
+                    </div>
+                    <p class="font-semibold text-text-primary-light">{{ alarm_severity_medium_count }}</p>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full bg-severity-low"></div>
+                      <p class="text-text-primary-light text-base font-medium">Low</p>
+                    </div>
+                    <p class="font-semibold text-text-primary-light">{{ alarm_severity_low_count }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <!-- Top Windows Events -->
+          <section class="py-8">
+            <h2 class="text-text-primary-light text-[22px] font-bold leading-tight tracking-[-0.015em] pb-5">Top Windows
+              Events</h2>
+            <div class="overflow-x-auto border border-border-light rounded-xl">
+              <table class="w-full text-left">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-sm font-bold text-text-primary-light" scope="col">Event ID</th>
+                    <th class="px-6 py-4 text-sm font-bold text-text-primary-light" scope="col">Description</th>
+                    <th class="px-6 py-4 text-sm font-bold text-text-primary-light text-right" scope="col">Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for event in top_events %}
+                  <tr class="border-t border-border-light bg-white">
+                    <td class="whitespace-nowrap px-6 py-4 text-base font-medium text-text-primary-light">{{
+                      event.event_id }}</td>
+                    <td class="whitespace-nowrap px-6 py-4 text-base text-text-secondary-light">{{ event.description }}
+                    </td>
+                    <td class="whitespace-nowrap px-6 py-4 text-base font-medium text-text-primary-light text-right">{{
+                      event.total_references }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+      <!-- Footer -->
+      <footer class="w-full mt-auto border-t border-border-light">
+        <div class="max-w-[960px] mx-auto py-4 px-4 sm:px-8">
+          <p class="text-center text-sm text-text-secondary-light">Generated by Trellix RACC - Confidential</p>
+        </div>
+      </footer>
+    </div>
+  </div>
+</body>
+
+</html>
