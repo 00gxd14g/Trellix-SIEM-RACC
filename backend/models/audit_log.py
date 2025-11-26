@@ -38,9 +38,9 @@ class AuditLog(db.Model):
     error_message = db.Column(db.Text, nullable=True)
 
     # Additional context
-    changes = db.Column(db.JSON, nullable=True)  # Before/after values for modifications
+    changes = db.Column(db.Text, nullable=True)  # Before/after values for modifications
     # Keep underlying DB column name "metadata" for backwards compatibility
-    audit_metadata = db.Column("metadata", db.JSON, nullable=True)
+    audit_metadata = db.Column("metadata", db.Text, nullable=True)
 
     def to_dict(self):
         """Convert audit log entry to dictionary."""

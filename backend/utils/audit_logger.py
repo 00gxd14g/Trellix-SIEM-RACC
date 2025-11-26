@@ -156,8 +156,8 @@ class AuditLogger:
                 status=status,
                 status_code=status_code,
                 error_message=error_message,
-                changes=changes,
-                audit_metadata=metadata,
+                changes=json.dumps(changes) if isinstance(changes, (dict, list)) else changes,
+                audit_metadata=json.dumps(metadata) if isinstance(metadata, (dict, list)) else metadata,
             )
 
             db.session.add(audit_entry)

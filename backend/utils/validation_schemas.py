@@ -45,7 +45,7 @@ def validate_no_sql_keywords(value):
 
     # Common SQL injection patterns
     sql_patterns = [
-        r'\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b',
+        r'\b(union|select|insert|delete|drop|alter|exec|execute)\b',
         r'--',
         r'/\*',
         r'\*/',
@@ -106,7 +106,6 @@ class GeneralSettingsSchema(Schema):
     appName = fields.Str(
         required=False,
         validate=[
-            validate_no_sql_keywords,
             validate_no_script_tags,
         ],
         metadata={'description': 'Application display name'}
@@ -212,7 +211,6 @@ class CustomerSettingsSchema(Schema):
         required=False,
         validate=[
             lambda x: len(x) <= 100,
-            validate_no_sql_keywords,
         ],
         metadata={'description': 'Field name for alarm matching'}
     )

@@ -96,6 +96,6 @@ Proje ilk kez çalıştırıldığında, veritabanı dosyası (`backend/database
 
 ## Ekran Görüntüleri (Screenshots)
 
-| Dashboard | Rules | Alarms |
-|:---:|:---:|:---:|
-| ![Dashboard](screenshot_dashboard.png) | ![Rules](screenshot_rules.png) | ![Alarms](screenshot_alarms.png) |
+| Dashboard | Rules | Alarms | Analysis |
+|:---:|:---:|:---:|:---:|
+| ![Dashboard](screenshot_dashboard.png) | ![Rules](screenshot_rules.png) | ![Alarms](screenshot_alarms.png) | ![Analysis](screenshot_analysis.png) |
