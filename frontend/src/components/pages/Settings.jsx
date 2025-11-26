@@ -122,7 +122,7 @@ export default function Settings() {
     };
 
     loadSystemSettings();
-  }, [setTheme, toast]);
+  }, [theme, setTheme, toast]);
 
   useEffect(() => {
     const initialCustomer = selectedCustomerId || customers[0]?.id || null;

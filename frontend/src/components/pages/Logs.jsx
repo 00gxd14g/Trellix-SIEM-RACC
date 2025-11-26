@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { useAppContext } from '@/context/AppContext';
@@ -47,7 +46,6 @@ export default function Logs() {
   const { selectedCustomerId } = useAppContext();
   const { toast } = useToast();
   const [logs, setLogs] = useState([]);
-  const [logsByCategory, setLogsByCategory] = useState({});
   const [categories, setCategories] = useState({});
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +63,7 @@ export default function Logs() {
     customer_id: selectedCustomerId ? selectedCustomerId.toString() : ''
   });
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -82,7 +80,6 @@ export default function Logs() {
       const response = await api.get('/logs/audit', { params });
       if (response.data.success) {
         setLogs(response.data.logs);
-        setLogsByCategory(response.data.logs_by_category || {});
         setTotalPages(Math.ceil(response.data.total / 20));
       }
     } catch (error) {
@@ -94,9 +91,9 @@ export default function Logs() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filters, selectedCustomerId, toast]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const params = {};
       if (selectedCustomerId) params.customer_id = selectedCustomerId;
@@ -108,9 +105,9 @@ export default function Logs() {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, [selectedCustomerId]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const params = {};
       if (selectedCustomerId) params.customer_id = selectedCustomerId;
@@ -122,7 +119,7 @@ export default function Logs() {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, [selectedCustomerId]);
 
   const handleExportLogs = async () => {
     setExporting(true);
@@ -241,7 +238,7 @@ export default function Logs() {
     fetchLogs();
     fetchCategories();
     fetchStats();
-  }, [page, filters.category, selectedCustomerId]);
+  }, [fetchLogs, fetchCategories, fetchStats]);
 
   const handleApplyFilters = () => {
     setPage(1);
@@ -645,8 +642,8 @@ export default function Logs() {
                     {['failure', 'error'].includes(selectedLog.status) ? 'Error Message' : 'Message'}
                   </label>
                   <p className={`text-sm p-3 rounded mt-1 ${['failure', 'error'].includes(selectedLog.status)
-                      ? 'bg-red-50 border border-red-200 text-red-800'
-                      : 'bg-muted font-mono'
+                    ? 'bg-red-50 border border-red-200 text-red-800'
+                    : 'bg-muted font-mono'
                     }`}>
                     {selectedLog.error_message}
                   </p>

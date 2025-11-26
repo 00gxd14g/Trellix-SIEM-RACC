@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/context/AppContext';
 import { customerAPI, ruleAPI, alarmAPI, analysisAPI, systemAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Users, 
-  FileText, 
-  Bell, 
-  RefreshCw, 
-  ArrowRight, 
+import {
+  Users,
+  FileText,
+  Bell,
+  RefreshCw,
+  ArrowRight,
   AlertTriangle,
   Server,
   Wifi,
@@ -143,8 +143,8 @@ export default function Dashboard() {
     description: item.description,
   }));
 
-  const currentCustomerName = selectedCustomerId 
-    ? (customers.find(c => c.id === selectedCustomerId)?.name || 'Unknown Customer') 
+  const currentCustomerName = selectedCustomerId
+    ? (customers.find(c => c.id === selectedCustomerId)?.name || 'Unknown Customer')
     : 'No Customer Selected';
 
   const apiCardBorder = apiStatus.ok ? 'border-muted' : 'border-destructive/40';
@@ -168,7 +168,7 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle className="text-2xl">Welcome to RACC</CardTitle>
           <CardDescription className="text-primary-foreground/80">
-            RACC: MSSP'ler ve Kurumlar İçin Trellix SIEM Yönetiminde Multi-Tenant Devrimi
+            RACC: MSSP&apos;ler ve Kurumlar İçin Trellix SIEM Yönetiminde Multi-Tenant Devrimi
           </CardDescription>
         </CardHeader>
         <CardContent>

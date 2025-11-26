@@ -83,5 +83,5 @@ describe('CustomerDetail XML upload flow', () => {
 
     vi.useRealTimers();
   });
-}
+});
 

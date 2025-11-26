@@ -70,24 +70,6 @@ Tüm sistemi (Backend, Frontend ve Veritabanı) tek komutla ayağa kaldırabilir
    cd frontend
    npm install
    npm run build
-   ```
-2. **Sunum:**
-   `frontend/dist` klasöründeki dosyaları Nginx, Apache veya IIS gibi bir web sunucusu ile yayınlayın.
-
----
-### Mock Veri Oluşturma (Demo)
-Sistemi test etmek için örnek müşteri, kural ve alarm verileri oluşturabilirsiniz:
-
-```bash
-# Backend dizininde:
-python backend/scripts/create_mock_data.py
-```
-Bu komut "Demo Customer" adında bir müşteri ve ilişkili örnek veriler oluşturacaktır.
-
-## Yapılandırma (Configuration)
-
-Prodüksiyon ortamında aşağıdaki ortam değişkenlerini ayarlamanız önerilir:
-
 - `SECRET_KEY`: Güvenli oturum yönetimi için rastgele ve güçlü bir anahtar.
 - `DATABASE_URL`: Veritabanı bağlantı adresi (Varsayılan: SQLite).
 - `ALLOWED_ORIGINS`: CORS için izin verilen domainler (örn: `https://racc.example.com`).
@@ -111,3 +93,9 @@ Proje ilk kez çalıştırıldığında, veritabanı dosyası (`backend/database
 
 ---
 *Geliştirici Notu: Bu proje, güvenlik operasyonlarını merkezileştirmek ve ölçeklenebilir hale getirmek amacıyla tasarlanmıştır.*
+
+## Ekran Görüntüleri (Screenshots)
+
+| Dashboard | Rules | Alarms |
+|:---:|:---:|:---:|
+| ![Dashboard](screenshot_dashboard.png) | ![Rules](screenshot_rules.png) | ![Alarms](screenshot_alarms.png) |

@@ -5,7 +5,7 @@ import Analysis from './Analysis';
 import FlowDiagram from './FlowDiagram';
 import { AppContext } from '@/context/AppContext';
 import { AppToastProvider } from '@/hooks/use-toast';
-import { analysisAPI, ruleAPI, alarmAPI } from '@/lib/api';
+import { analysisAPI, ruleAPI } from '@/lib/api';
 
 vi.mock('@/lib/api', () => ({
   analysisAPI: {
@@ -19,9 +19,6 @@ vi.mock('@/lib/api', () => ({
   ruleAPI: {
     getAll: vi.fn(),
     getById: vi.fn(),
-  },
-  alarmAPI: {
-    getAll: vi.fn(),
   },
 }));
 
@@ -110,4 +107,3 @@ describe('Analysis and Flow Diagram navigation basics', () => {
     expect(screen.getByText(/Flow Diagram/i)).toBeInTheDocument();
   });
 });
-

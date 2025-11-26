@@ -19,93 +19,6 @@ export function XMLEditor({
     const [activeTab, setActiveTab] = useState('formatted');
     const [copied, setCopied] = useState(false);
 
-    const formatXMLWithIndentation = (xml) => {
-        const PADDING = '  ';
-        const reg = /(>)(<)(\/*)/g;
-        let formatted = '';
-        let pad = 0;
-
-        xml = xml.replace(reg, '$1\n$2$3');
-
-        const lines = xml.split('\n');
-        lines.forEach((node) => {
-            let indent = 0;
-            if (node.match(/.+<\/\w[^>]*>$/)) {
-                indent = 0;
-            } else if (node.match(/^<\/\w/) && pad > 0) {
-                pad -= 1;
-            } else if (node.match(/^<\w[^>]*[^\/]>.*$/)) {
-                indent = 1;
-            } else {
-                indent = 0;
-            }
-
-            formatted += PADDING.repeat(pad) + node + '\n';
-            pad += indent;
-        });
-
-        return formatted.trim();
-    };
-
-    const beautifyXML = (xml) => {
-        if (!xml) return '';
-
-        try {
-            xml = xml.trim();
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xml, 'text/xml');
-
-            const parserError = xmlDoc.querySelector('parsererror');
-            if (parserError) {
-                console.error('XML parsing error:', parserError.textContent);
-                return formatXMLWithIndentation(xml);
-            }
-
-            const serializer = new XMLSerializer();
-            let formatted = serializer.serializeToString(xmlDoc);
-            formatted = formatXMLWithIndentation(formatted);
-
-            return formatted;
-        } catch (error) {
-            console.error('Error beautifying XML:', error);
-            return xml;
-        }
-    };
-
-    const extractXMLMetadata = (xml) => {
-        if (!xml) return {};
-
-        try {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xml, 'text/xml');
-            const rootElement = xmlDoc.documentElement;
-
-            if (!rootElement) return {};
-
-            const metadata = {
-                rootTag: rootElement.tagName,
-                attributes: {},
-                childCount: rootElement.children.length,
-                size: new Blob([xml]).size,
-            };
-
-            for (let i = 0; i < rootElement.attributes.length; i++) {
-                const attr = rootElement.attributes[i];
-                metadata.attributes[attr.name] = attr.value;
-            }
-
-            return metadata;
-        } catch (error) {
-            return {};
-        }
-    };
-
-    const syntaxHighlight = (xml) => {
-        if (!xml) return '';
-        // Return plain XML for now to avoid rendering issues
-        return xml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    };
-
     useEffect(() => {
         if (xmlContent) {
             setEditedContent(xmlContent);
@@ -164,6 +77,7 @@ export function XMLEditor({
         toast({
             title: "Beautified",
             description: "XML formatted successfully",
+
         });
     };
 
@@ -272,5 +186,92 @@ export function XMLEditor({
         </Dialog>
     );
 }
+
+const formatXMLWithIndentation = (xml) => {
+    const PADDING = '  ';
+    const reg = /(>)(<)(\/*)/g;
+    let formatted = '';
+    let pad = 0;
+
+    xml = xml.replace(reg, '$1\n$2$3');
+
+    const lines = xml.split('\n');
+    lines.forEach((node) => {
+        let indent = 0;
+        if (node.match(/.+<\/\w[^>]*>$/)) {
+            indent = 0;
+        } else if (node.match(/^<\/\w/) && pad > 0) {
+            pad -= 1;
+        } else if (node.match(/^<\w[^>]*[^/]>.*$/)) {
+            indent = 1;
+        } else {
+            indent = 0;
+        }
+
+        formatted += PADDING.repeat(pad) + node + '\n';
+        pad += indent;
+    });
+
+    return formatted.trim();
+};
+
+const beautifyXML = (xml) => {
+    if (!xml) return '';
+
+    try {
+        xml = xml.trim();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xml, 'text/xml');
+
+        const parserError = xmlDoc.querySelector('parsererror');
+        if (parserError) {
+            console.error('XML parsing error:', parserError.textContent);
+            return formatXMLWithIndentation(xml);
+        }
+
+        const serializer = new XMLSerializer();
+        let formatted = serializer.serializeToString(xmlDoc);
+        formatted = formatXMLWithIndentation(formatted);
+
+        return formatted;
+    } catch (error) {
+        console.error('Error beautifying XML:', error);
+        return xml;
+    }
+};
+
+const extractXMLMetadata = (xml) => {
+    if (!xml) return {};
+
+    try {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xml, 'text/xml');
+        const rootElement = xmlDoc.documentElement;
+
+        if (!rootElement) return {};
+
+        const metadata = {
+            rootTag: rootElement.tagName,
+            attributes: {},
+            childCount: rootElement.children.length,
+            size: new Blob([xml]).size,
+        };
+
+        for (let i = 0; i < rootElement.attributes.length; i++) {
+            const attr = rootElement.attributes[i];
+            metadata.attributes[attr.name] = attr.value;
+        }
+
+        return metadata;
+    } catch (error) {
+        return {};
+    }
+};
+
+const syntaxHighlight = (xml) => {
+    if (!xml) return '';
+    // Return plain XML for now to avoid rendering issues
+    return xml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+};
 
 export default XMLEditor;

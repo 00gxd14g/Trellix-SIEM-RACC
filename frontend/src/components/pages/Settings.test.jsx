@@ -211,8 +211,8 @@ describe('Settings Component', () => {
   it('should export settings', async () => {
     const createObjectURL = vi.fn();
     const revokeObjectURL = vi.fn();
-    global.URL.createObjectURL = createObjectURL;
-    global.URL.revokeObjectURL = revokeObjectURL;
+    window.URL.createObjectURL = createObjectURL;
+    window.URL.revokeObjectURL = revokeObjectURL;
 
     const createElement = document.createElement.bind(document);
     document.createElement = vi.fn((tagName) => {
