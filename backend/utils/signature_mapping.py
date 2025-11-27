@@ -128,11 +128,45 @@ def extract_event_ids_from_text(xml_text: Optional[str]) -> List[str]:
     if not xml_text:
         return []
 
-    matches = set(re.findall(r'43-\d+', xml_text))
     event_ids: Set[str] = set()
 
+    # 1. Regex search for 43-xxxx patterns (fastest)
+    matches = set(re.findall(r'43-\d+', xml_text))
     for signature in matches:
         event_ids.update(get_event_ids_for_signature(signature))
+
+    # 2. XML Parsing for SIG_ID components (more accurate for non-standard formats)
+    try:
+        from lxml import etree
+        # Wrap in a root element if it's a fragment or multiple roots
+        if not xml_text.strip().startswith('<?xml'):
+             # Simple heuristic check, might need robust handling
+             pass
+
+        # Attempt to parse
+        # We use a permissive parser or wrap content to handle fragments if needed
+        # But assuming xml_content is usually a full <rule> or <ruleset>
+        if '<rule' in xml_text or '<ruleset' in xml_text:
+            try:
+                root = etree.fromstring(xml_text.encode('utf-8'))
+                
+                # Find all singleFilterComponent with type="SIG_ID"
+                sig_components = root.xpath('.//singleFilterComponent[@type="SIG_ID"]')
+                for comp in sig_components:
+                    # Find the value in filterData
+                    value_node = comp.xpath('.//filterData[@name="value"]')
+                    if value_node:
+                        val = value_node[0].get('value', '')
+                        # Values can be comma separated
+                        for v in val.split(','):
+                            v = v.strip()
+                            if v:
+                                event_ids.update(get_event_ids_for_signature(v))
+            except Exception:
+                # Fallback or ignore XML parsing errors
+                pass
+    except ImportError:
+        pass
 
     return sorted(event_ids)
 

@@ -95,7 +95,7 @@ def generate_mermaid_diagram_from_rule_xml(xml_content: str) -> str:
                 safe_operator = operator.replace('"', "'")
                 
                 # Wrap long values with <br/>
-                def wrap_text(text, width=30):
+                def wrap_text(text, width=25):
                     return '<br/>'.join([text[i:i+width] for i in range(0, len(text), width)])
                 
                 safe_value = wrap_text(value.replace('"', "'").replace('\n', ' '))
@@ -265,11 +265,12 @@ def html_to_pdf(html_content: str) -> bytes:
                 padding: 1rem;
                 border-radius: 0.5rem;
                 border: 1px solid #e5e7eb;
+                page-break-inside: avoid;
             }
         ''')
         
         # Generate PDF
-        HTML(string=html_content).write_pdf(pdf_buffer, stylesheets=[pdf_css])
+        HTML(string=html_content).write_pdf(pdf_buffer, stylesheets=[pdf_css], presentational_hints=True)
         
         # Get the PDF content
         pdf_content = pdf_buffer.getvalue()

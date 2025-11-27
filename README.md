@@ -90,19 +90,6 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Production modunda başlatma
-export FLASK_CONFIG=production  # Windows: $env:FLASK_CONFIG="production"
-python production_server.py
-```
-
-#### Frontend
-```bash
-cd frontend
-npm install
-npm run build
-# 'dist' klasöründeki dosyaları bir web sunucusu (Nginx vb.) ile sunun.
-```
-
 ## ⚙️ Konfigürasyon (Environment Variables)
 
 Uygulama ayarlarını değiştirmek için aşağıdaki ortam değişkenlerini kullanabilirsiniz:
@@ -131,6 +118,21 @@ Trellix-RACC/
 │   └── vite.config.js     # Build ayarları
 └── docker-compose.yml      # Docker konfigürasyonu
 ```
+
+## Recent Updates (v1.1.0)
+
+### Reporting & Export
+- **Enhanced PDF Export**: Fixed issues with PDF generation for rule and alarm tables. Now includes a text-based "Logic Flow" diagram for PDF output to ensure algorithmic logic is visible and uninterrupted, while retaining interactive Mermaid diagrams for HTML exports.
+- **Improved Visualization**: Optimized Mermaid diagrams to ensure values fit within boxes by implementing smart text wrapping.
+- **Event ID Integration**: Added Windows Event ID resolution to Rule and Alarm details. The system now parses rule XML and Signature IDs to automatically map and display relevant Windows Event IDs (e.g., 4624, 4625) with their descriptions.
+
+### Backend Improvements
+- **Robust XML Parsing**: Enhanced `signature_mapping.py` to parse XML content for `SIG_ID` components, ensuring accurate Event ID extraction even for complex rule definitions.
+- **API Enhancements**: Updated `Rule` and `Alarm` API responses to include `alarm_count`, `matched_alarms`, and resolved `windows_events` data, fixing issues where these fields were empty in the frontend.
+
+### Frontend
+- **Detail Modals**: Added "Windows Event IDs" sections to Rule and Alarm detail modals with tooltip descriptions.
+- **Tooltips**: Integrated tooltips into data tables for quick reference of Event ID descriptions.
 
 ---
 *Geliştirici Notu: Bu proje, güvenlik operasyonlarını merkezileştirmek ve manuel hata riskini azaltmak amacıyla tasarlanmıştır.*

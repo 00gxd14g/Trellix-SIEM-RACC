@@ -139,6 +139,8 @@ class Rule(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'windows_event_ids': windows_event_ids,
             'windows_events': get_event_details(windows_event_ids),
+            'alarm_count': len(self.alarms),
+            'matched_alarms': [{'id': a.id, 'name': a.name, 'match_value': a.match_value} for a in self.alarms]
         }
 
 class Alarm(db.Model):

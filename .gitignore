@@ -94,3 +94,5 @@ example-alarms-rules/Alarm-example.xml
 example-alarms-rules/McAfee-SIEM-Alarm-Schema.md
 backend/output.txt
 backend/debug_output.txt
+
+check_rules.py
