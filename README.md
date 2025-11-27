@@ -34,13 +34,59 @@ RACC, modern yazılım standartlarına göre geliştirilmiştir:
 Tüm sistemi (Backend, Frontend ve Veritabanı) tek komutla ayağa kaldırabilirsiniz.
 
 1. **Gereksinimler:** Docker ve Docker Compose yüklü olmalıdır.
-2. **Çalıştırma:**
+
+2. **SECRET_KEY Konfigürasyonu (ÖNEMLİ):**
+   
+   Uygulama güvenliği için güçlü bir SECRET_KEY oluşturun:
+   
    ```bash
-   docker-compose up --build -d
+   # Güçlü bir secret key oluşturun
+   python3 -c "import secrets; print(secrets.token_hex(32))"
    ```
-3. **Erişim:**
+   
+   Çıktıyı `.env` dosyasına kaydedin:
+   ```bash
+   echo "SECRET_KEY=<yukarıdaki-komutun-çıktısı>" > .env
+   ```
+   
+   Veya doğrudan export edin:
+   ```bash
+   export SECRET_KEY=<üretilen-anahtar>
+   ```
+
+3. **Çalıştırma:**
+   ```bash
+   # Cache kullanmadan temiz build
+   docker-compose build --no-cache --pull
+   
+   # Container'ları başlatın
+   docker-compose up -d
+   
+   # Logları kontrol edin
+   docker-compose logs -f backend
+   ```
+
+4. **Erişim:**
    - Uygulama: `http://localhost:3000`
    - API: `http://localhost:5000`
+
+5. **Sorun Giderme:**
+   
+   Eğer `TypeError: 'property' object is not iterable` hatası alıyorsanız:
+   ```bash
+   # Container'ları durdurun
+   docker-compose down
+   
+   # Cache'i temizleyin
+   docker system prune -a -f
+   
+   # SECRET_KEY'in ayarlandığından emin olun
+   echo $SECRET_KEY
+   
+   # Yeniden build ve başlatın
+   docker-compose build --no-cache --pull
+   docker-compose up -d
+   ```
 
 ### Seçenek 2: Manuel Prodüksiyon Kurulumu
 
@@ -70,16 +116,71 @@ Tüm sistemi (Backend, Frontend ve Veritabanı) tek komutla ayağa kaldırabilir
    cd frontend
    npm install
    npm run build
-- `SECRET_KEY`: Güvenli oturum yönetimi için rastgele ve güçlü bir anahtar.
-- `DATABASE_URL`: Veritabanı bağlantı adresi (Varsayılan: SQLite).
-- `ALLOWED_ORIGINS`: CORS için izin verilen domainler (örn: `https://racc.example.com`).
+   ```
+2. **Nginx ile Sunma (Production):**
+   ```bash
+   # Build edilmiş dosyalar frontend/dist dizininde
+   # Nginx veya başka bir web server ile sunun
+   ```
+
+## Ortam Değişkenleri (Environment Variables)
+
+Uygulama davranışını özelleştirmek için aşağıdaki ortam değişkenlerini kullanabilirsiniz:
+
+### Güvenlik Ayarları
+
+- **`SECRET_KEY`** (Zorunlu): Flask session yönetimi için kriptografik anahtar.
+  - **Üretim ortamında mutlaka değiştirin!**
+  - Oluşturma: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+  - Minimum 32 karakter, rastgele ve tahmin edilemez olmalı
+  - Örnek: `5f352379324c22463451387a0aec5d2f9b8c1a2d3e4f5a6b7c8d9e0f1a2b3c4d`
+
+### Veritabanı Ayarları
+
+- **`DATABASE_URL`**: Veritabanı bağlantı URL'i
+  - Varsayılan: `sqlite:///backend/database/app.db`
+  - PostgreSQL örnek: `postgresql://user:password@localhost/racc_db`
+
+### CORS Ayarları
+
+- **`ALLOWED_ORIGINS`**: İzin verilen kaynak domainler (virgülle ayrılmış)
+  - Varsayılan: `http://localhost:3000,http://localhost:5173`
+  - Üretim örnek: `https://racc.example.com`
+
+### Alarm Varsayılanları
+
+- **`DEFAULT_ALARM_MIN_VERSION`**: Varsayılan minimum alarm versiyonu (Varsayılan: `11.6.14`)
+- **`DEFAULT_ASSIGNEE_ID`**: Varsayılan atanan kişi ID (Varsayılan: `655372`)
+- **`DEFAULT_ESC_ASSIGNEE_ID`**: Varsayılan eskalasyon ID (Varsayılan: `90118`)
+
+### Diğer Ayarlar
+
+- **`FLASK_CONFIG`**: Flask yapılandırma modu (`development`, `production`, `testing`)
+- **`LOG_LEVEL`**: Log seviyesi (Varsayılan: `DEBUG`)
+- **`MAX_CONTENT_LENGTH`**: Maksimum upload boyutu byte cinsinden (Varsayılan: `16777216`)
+
+### Örnek .env Dosyası
+
+```bash
+# Güvenlik
+SECRET_KEY=5f352379324c22463451387a0aec5d2f9b8c1a2d3e4f5a6b7c8d9e0f1a2b3c4d
+
+# Uygulama
+FLASK_CONFIG=production
+
+# CORS
+ALLOWED_ORIGINS=https://racc.example.com
+
+# Log
+LOG_LEVEL=INFO
+```
 
 ## Veritabanı Kurulumu (Database Setup)
 
 Proje ilk kez çalıştırıldığında, veritabanı dosyası (`backend/database/app.db`) otomatik olarak oluşturulur.
 
 1. **Otomatik Oluşturma:** Uygulama başlatıldığında (`python main.py` veya Docker ile), sistem veritabanı dosyasının varlığını kontrol eder. Eğer yoksa, boş bir veritabanı oluşturur ve gerekli tabloları (`db.create_all()`) hazırlar.
-2. **Veri Doldurma:** Yeni oluşturulan veritabanı boştur. Uygulamayı kullanmaya başlamadan önce müşteri ve kural tanımlarını yapmanız gerekmektedir.
+
 
 ## Proje Yapısı
 
