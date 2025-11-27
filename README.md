@@ -1,202 +1,133 @@
-# RACC: MSSP'ler ve Kurumlar İçin Trellix SIEM Yönetiminde Multi-Tenant Devrimi
+# RACC: Trellix SIEM Kural ve Alarm Yönetim Merkezi
 
+RACC (Rule & Alarm Control Center), Trellix SIEM (eski adıyla McAfee ESM) yöneticileri ve MSSP analistleri için geliştirilmiş, kural ve alarm yönetimini kolaylaştıran modern bir web arayüzüdür.
 
-**Sorun:** Geleneksel yöntemlerde analistler müşteriler arasında geçiş yaparken hata yapmaya açıktır.
+Bu proje, karmaşık XML düzenlemeleriyle uğraşmadan, görsel bir arayüz üzerinden korelasyon kuralları ve alarmlar oluşturmanızı, doğrulamanızı ve yönetmenizi sağlar.
 
-**RACC Çözümü:** Proje, veritabanı seviyesinde sıkı bir tenant (müşteri) izolasyonu sağlar. `backend/utils/tenant_auth.py` modülü sayesinde, sisteme giriş yapan bir analist veya müşteri, sadece yetkili olduğu "Customer ID"ye ait kuralları ve alarmları görür. Bu, veri sızıntısı riskini mimari düzeyde engeller.
+## 🚀 Temel Özellikler
 
-### 2. Tek Arayüzden Çoklu Yönetim
+### 1. Görsel Kural Analizi ve Akış Diyagramları
+Trellix kuralları karmaşık mantıksal yapılara sahiptir. RACC, bu kuralları anlaşılır akış diyagramlarına dönüştürerek:
+- Karmaşık kural mantığını (AND, OR, NOT ilişkileri) görselleştirir.
+- Kural ve alarm arasındaki ilişkileri net bir şekilde gösterir.
+- Analistlerin mevcut kuralları hızlıca anlamasını ve hata ayıklamasını sağlar.
 
-Danışmanlar için onlarca farklı ESM (Enterprise Security Manager) arayüzüne bağlanmak büyük zaman kaybıdır.
+### 2. Çoklu Müşteri Yönetimi (Multi-Customer)
+MSSP'ler için tasarlanmış yapı sayesinde:
+- Birden fazla müşterinin kural ve alarmlarını tek bir arayüzden yönetebilirsiniz.
+- Müşteriler arasında mantıksal ayrım (Logical Separation) sağlar.
+- Müşteri bazlı istatistikler ve raporlar sunar.
 
-RACC, tüm müşterilerinizi tek bir dashboard üzerinden yönetmenize olanak tanır.
+### 3. Toplu İşlemler ve Verimlilik
+- **Bulk Import/Export:** Kuralları ve alarmları toplu olarak içe/dışa aktarın.
+- **Gelişmiş Arama:** Binlerce kural arasında anında arama ve filtreleme.
+- **Klonlama:** Mevcut bir kuralı veya alarmı tek tıkla kopyalayıp başka bir müşteri için uyarlayın.
 
-"A Müşterisi" için geliştirdiğiniz bir kural şablonunu, saniyeler içinde mantıksal operatörlerini değiştirerek "B Müşterisi"ne uyarlayabilirsiniz.
+### 4. Analiz ve Raporlama
+- Kural ve alarm ilişkilerini görselleştiren akış diyagramları.
+- Müşteri bazlı kural/alarm dağılım grafikleri.
+- Sistem logları ve audit kayıtları.
 
-### 3. Karmaşık XML Yapılarına Son: Görsel Editör
+## 🛠 Teknik Altyapı
 
-Trellix/McAfee kuralları karmaşık XML yapıları gerektirir. Bir MSSP analisti, günde onlarca kural yazarken XML syntax hatalarıyla uğraşmamalıdır.
+RACC, modern, güvenli ve performanslı teknolojiler üzerine inşa edilmiştir:
 
-**Çözüm:** React ile geliştirdiğim sürükle-bırak destekli formlar, arka planda otomatik olarak validasyonu yapılmış (`lxml` kütüphanesi ile) hatasız XML çıktıları üretir. Bu, L1 ve L2 analistlerinin bile hata yapmadan karmaşık korelasyon kuralları yazabilmesini sağlar.
+- **Backend:** Python Flask (REST API)
+- **Frontend:** React + Vite + Tailwind CSS (Modern UI)
+- **Veritabanı:** SQLite (Varsayılan) / PostgreSQL (Opsiyonel)
+- **Güvenlik:** 
+  - CSRF Koruması
+  - Secure Headers (Helmet)
+  - Input Validation
+  - Rate Limiting
 
-## Teknik Derinlik: Kaputun Altında Ne Var?
-
-RACC, modern yazılım standartlarına göre geliştirilmiştir:
-
-- **Backend:** Python Flask üzerinde çalışan, SQL Injection ve XSS korumaları (`backend/utils/security_config.py`) ile güçlendirilmiş güvenli bir API.
-- **Frontend:** React ve modern UI bileşenleri ile hızlı, responsive ve kullanıcı dostu bir arayüz.
-- **Performans:** Redis tabanlı caching mekanizması ile binlerce kural arasında milisaniyeler içinde arama ve filtreleme.
-- **Audit Logging:** Bir MSSP için "Kim, Ne Zaman, Hangi Kuralı Değiştirdi?" sorusu hayati önem taşır. RACC, tüm işlemleri AuditLog mekanizması ile kayıt altına alır.
-
-## Kurulum ve Dağıtım (Deployment)
+## 📦 Kurulum ve Dağıtım
 
 ### Seçenek 1: Docker ile Hızlı Kurulum (Önerilen)
+
 Tüm sistemi (Backend, Frontend ve Veritabanı) tek komutla ayağa kaldırabilirsiniz.
 
 1. **Gereksinimler:** Docker ve Docker Compose yüklü olmalıdır.
 
-2. **SECRET_KEY Konfigürasyonu (ÖNEMLİ):**
-   
-   Uygulama güvenliği için güçlü bir SECRET_KEY oluşturun:
+2. **Güvenlik Ayarı (ÖNEMLİ):**
+   Uygulama güvenliği için güçlü bir `SECRET_KEY` oluşturun:
    
    ```bash
-   # Güçlü bir secret key oluşturun
+   # Güçlü bir anahtar üretin
    python3 -c "import secrets; print(secrets.token_hex(32))"
    ```
    
-   Çıktıyı `.env` dosyasına kaydedin:
+   Bu anahtarı `.env` dosyasına kaydedin veya environment variable olarak tanımlayın:
    ```bash
-   echo "SECRET_KEY=<yukarıdaki-komutun-çıktısı>" > .env
-   ```
-   
-   Veya doğrudan export edin:
-   ```bash
-   export SECRET_KEY=<üretilen-anahtar>
+   export SECRET_KEY=<urettiginiz-anahtar>
    ```
 
 3. **Çalıştırma:**
    ```bash
-   # Cache kullanmadan temiz build
+   # Cache kullanmadan temiz kurulum
    docker-compose build --no-cache --pull
    
-   # Container'ları başlatın
+   # Servisleri başlatın
    docker-compose up -d
    
-   # Logları kontrol edin
+   # Logları izleyin
    docker-compose logs -f backend
    ```
 
 4. **Erişim:**
-   - Uygulama: `http://localhost:3000`
-   - API: `http://localhost:5000`
+   - **Arayüz:** `http://localhost:3000`
+   - **API:** `http://localhost:5000`
 
-5. **Sorun Giderme:**
-   
-   Eğer `TypeError: 'property' object is not iterable` hatası alıyorsanız:
-   ```bash
-   # Container'ları durdurun
-   docker-compose down
-   
-   # Cache'i temizleyin
-   docker system prune -a -f
-   
-   # SECRET_KEY'in ayarlandığından emin olun
-   echo $SECRET_KEY
-   
-   # Yeniden build ve başlatın
-   docker-compose build --no-cache --pull
-   docker-compose up -d
-   ```
-
-### Seçenek 2: Manuel Prodüksiyon Kurulumu
+### Seçenek 2: Manuel Kurulum
 
 #### Backend
-1. **Kurulum:**
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-2. **Prodüksiyon Modunda Başlatma:**
-   Windows:
-   ```powershell
-   $env:FLASK_CONFIG="production"
-   python production_server.py
-   ```
-   Linux/Mac:
-   ```bash
-   export FLASK_CONFIG=production
-   python production_server.py
-   ```
-
-#### Frontend
-1. **Derleme (Build):**
-   ```bash
-   cd frontend
-   npm install
-   npm run build
-   ```
-2. **Nginx ile Sunma (Production):**
-   ```bash
-   # Build edilmiş dosyalar frontend/dist dizininde
-   # Nginx veya başka bir web server ile sunun
-   ```
-
-## Ortam Değişkenleri (Environment Variables)
-
-Uygulama davranışını özelleştirmek için aşağıdaki ortam değişkenlerini kullanabilirsiniz:
-
-### Güvenlik Ayarları
-
-- **`SECRET_KEY`** (Zorunlu): Flask session yönetimi için kriptografik anahtar.
-  - **Üretim ortamında mutlaka değiştirin!**
-  - Oluşturma: `python3 -c "import secrets; print(secrets.token_hex(32))"`
-  - Minimum 32 karakter, rastgele ve tahmin edilemez olmalı
-  - Örnek: `5f352379324c22463451387a0aec5d2f9b8c1a2d3e4f5a6b7c8d9e0f1a2b3c4d`
-
-### Veritabanı Ayarları
-
-- **`DATABASE_URL`**: Veritabanı bağlantı URL'i
-  - Varsayılan: `sqlite:///backend/database/app.db`
-  - PostgreSQL örnek: `postgresql://user:password@localhost/racc_db`
-
-### CORS Ayarları
-
-- **`ALLOWED_ORIGINS`**: İzin verilen kaynak domainler (virgülle ayrılmış)
-  - Varsayılan: `http://localhost:3000,http://localhost:5173`
-  - Üretim örnek: `https://racc.example.com`
-
-### Alarm Varsayılanları
-
-- **`DEFAULT_ALARM_MIN_VERSION`**: Varsayılan minimum alarm versiyonu (Varsayılan: `11.6.14`)
-- **`DEFAULT_ASSIGNEE_ID`**: Varsayılan atanan kişi ID (Varsayılan: `655372`)
-- **`DEFAULT_ESC_ASSIGNEE_ID`**: Varsayılan eskalasyon ID (Varsayılan: `90118`)
-
-### Diğer Ayarlar
-
-- **`FLASK_CONFIG`**: Flask yapılandırma modu (`development`, `production`, `testing`)
-- **`LOG_LEVEL`**: Log seviyesi (Varsayılan: `DEBUG`)
-- **`MAX_CONTENT_LENGTH`**: Maksimum upload boyutu byte cinsinden (Varsayılan: `16777216`)
-
-### Örnek .env Dosyası
-
 ```bash
-# Güvenlik
-SECRET_KEY=5f352379324c22463451387a0aec5d2f9b8c1a2d3e4f5a6b7c8d9e0f1a2b3c4d
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-# Uygulama
-FLASK_CONFIG=production
-
-# CORS
-ALLOWED_ORIGINS=https://racc.example.com
-
-# Log
-LOG_LEVEL=INFO
+# Production modunda başlatma
+export FLASK_CONFIG=production  # Windows: $env:FLASK_CONFIG="production"
+python production_server.py
 ```
 
-## Veritabanı Kurulumu (Database Setup)
+#### Frontend
+```bash
+cd frontend
+npm install
+npm run build
+# 'dist' klasöründeki dosyaları bir web sunucusu (Nginx vb.) ile sunun.
+```
 
-Proje ilk kez çalıştırıldığında, veritabanı dosyası (`backend/database/app.db`) otomatik olarak oluşturulur.
+## ⚙️ Konfigürasyon (Environment Variables)
 
-1. **Otomatik Oluşturma:** Uygulama başlatıldığında (`python main.py` veya Docker ile), sistem veritabanı dosyasının varlığını kontrol eder. Eğer yoksa, boş bir veritabanı oluşturur ve gerekli tabloları (`db.create_all()`) hazırlar.
+Uygulama ayarlarını değiştirmek için aşağıdaki ortam değişkenlerini kullanabilirsiniz:
 
+| Değişken | Açıklama | Varsayılan |
+|----------|----------|------------|
+| `SECRET_KEY` | **Zorunlu.** Session güvenliği için gizli anahtar. | (Yok - Ayarlanmalı) |
+| `FLASK_CONFIG` | Çalışma modu (`development`, `production`). | `development` |
+| `DATABASE_URL` | Veritabanı bağlantı adresi. | `sqlite:///backend/database/app.db` |
+| `ALLOWED_ORIGINS` | CORS için izin verilen domainler. | `http://localhost:3000` |
+| `LOG_LEVEL` | Log detay seviyesi (`DEBUG`, `INFO`, `WARNING`). | `DEBUG` |
 
-## Proje Yapısı
+## 📂 Proje Yapısı
 
-- `backend/`: Flask tabanlı REST API.
-  - `routes/`: API endpoint tanımları.
-  - `models/`: Veritabanı şemaları.
-  - `utils/`: Yardımcı araçlar (XML parser, loglama vb.).
-- `frontend/`: React tabanlı kullanıcı arayüzü.
-  - `src/components/`: UI bileşenleri ve sayfalar.
-- `docker-compose.yml`: Docker dağıtım konfigürasyonu.
+```
+Trellix-RACC/
+├── backend/                # Python Flask API
+│   ├── models/            # Veritabanı modelleri
+│   ├── routes/            # API endpoint'leri
+│   ├── utils/             # Yardımcı araçlar (XML parser, Auth vb.)
+│   └── config.py          # Konfigürasyon dosyası
+├── frontend/               # React UI
+│   ├── src/
+│   │   ├── components/    # UI bileşenleri ve sayfalar
+│   │   └── context/       # State yönetimi
+│   └── vite.config.js     # Build ayarları
+└── docker-compose.yml      # Docker konfigürasyonu
+```
 
 ---
-*Geliştirici Notu: Bu proje, güvenlik operasyonlarını merkezileştirmek ve ölçeklenebilir hale getirmek amacıyla tasarlanmıştır.*
-
-## Ekran Görüntüleri (Screenshots)
-
-| Analysis | Reporting | Rule Flowchart |
-|:---:|:---:|:---:|
-| ![Analysis](screenshot_analysis.png) | ![Reporting](screenshot_reporting.png) | ![Rule Flowchart](screenshot_flowchart.png) |
+*Geliştirici Notu: Bu proje, güvenlik operasyonlarını merkezileştirmek ve manuel hata riskini azaltmak amacıyla tasarlanmıştır.*
