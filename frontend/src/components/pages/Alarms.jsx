@@ -14,6 +14,7 @@ import BulkEditModal from '@/components/modals/BulkEditModal';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { getSeverityMeta } from '@/utils/severity';
 import XMLEditor from '@/components/XMLEditor';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui';
 import {
   AlertTriangle,
   Search,
@@ -130,18 +131,41 @@ export default function Alarms() {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format = 'xml') => {
     if (!selectedCustomerId) {
       toast({ title: "Select Customer", description: "Choose a customer before exporting alarms.", variant: "destructive" });
       return;
     }
 
+    // Check if alarms are selected for HTML/PDF export
+    if ((format === 'html' || format === 'pdf') && selectedAlarms.size === 0) {
+      toast({ title: "No Selection", description: "Please select at least one alarm to export as HTML/PDF.", variant: "destructive" });
+      return;
+    }
+
     try {
-      const response = await alarmAPI.exportAll(selectedCustomerId, Array.from(selectedAlarms));
-      const contentType = response.headers['content-type'] || 'application/xml';
+      let response;
+      let contentType;
+      let fileExtension;
+
+      if (format === 'html') {
+        response = await alarmAPI.exportHtml(selectedCustomerId, Array.from(selectedAlarms));
+        contentType = 'text/html';
+        fileExtension = 'html';
+      } else if (format === 'pdf') {
+        response = await alarmAPI.exportPdf(selectedCustomerId, Array.from(selectedAlarms));
+        contentType = 'application/pdf';
+        fileExtension = 'pdf';
+      } else {
+        // XML export (existing functionality)
+        response = await alarmAPI.exportAll(selectedCustomerId, Array.from(selectedAlarms));
+        contentType = 'application/xml';
+        fileExtension = 'xml';
+      }
+
       const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
       const disposition = response.headers['content-disposition'];
-      let filename = `alarms-${new Date().toISOString().split('T')[0]}.xml`;
+      let filename = `alarms-${new Date().toISOString().split('T')[0]}.${fileExtension}`;
 
       if (disposition) {
         const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
@@ -158,10 +182,10 @@ export default function Alarms() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast({ title: "Export Complete", description: "Alarm XML downloaded successfully." });
+      toast({ title: "Export Complete", description: `Alarm ${format.toUpperCase()} downloaded successfully.` });
     } catch (error) {
       console.error('Failed to export alarms:', error);
-      if (error.response?.status === 404) {
+      if (error.response?.status === 404 && format === 'xml') {
         const dataStr = JSON.stringify(filteredAlarms, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
@@ -508,10 +532,31 @@ export default function Alarms() {
               View XML ({selectedAlarms.size})
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 space-y-2">
+              <p className="text-xs text-muted-foreground">Export as:</p>
+              {[
+                { label: 'XML', value: 'xml' },
+                { label: 'HTML', value: 'html' },
+                { label: 'PDF', value: 'pdf' },
+              ].map(option => (
+                <Button
+                  key={option.value}
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => handleExport(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
             <Upload className="h-4 w-4 mr-2" />
             {importing ? 'Importing...' : 'Import'}

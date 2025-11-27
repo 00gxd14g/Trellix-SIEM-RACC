@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, make_response
+from flask import Blueprint, request, jsonify, make_response, render_template
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from models.customer import db, Customer, Rule, Alarm, RuleAlarmRelationship
@@ -6,6 +6,7 @@ from utils.xml_utils import AlarmGenerator, generate_rules_xml
 from utils.rule_alarm_transformer import RuleAlarmTransformer
 from utils.tenant_auth import require_customer_token, log_tenant_access
 from utils.audit_logger import AuditLogger, AuditAction, audit_log
+from utils.export_utils import prepare_rule_export_data, html_to_pdf
 import logging
 
 # Configure logging
@@ -483,3 +484,98 @@ def delete_rule(customer_id, rule_id):
         db.session.rollback()
         logger.error(f"Error deleting rule {rule_id} for customer {customer_id}: {e}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred.'}), 500
+
+
+@rule_bp.route('/customers/<int:customer_id>/rules/export/html', methods=['POST'])
+@require_customer_token
+def export_rules_html(customer_id):
+    """Export selected rules as HTML with correlation logic flow diagrams"""
+    try:
+        customer = Customer.query.get_or_404(customer_id)
+        data = request.get_json()
+        
+        if not data or 'rule_ids' not in data:
+            return jsonify({'success': False, 'error': 'Missing rule_ids in request body'}), 400
+        
+        rule_ids = data['rule_ids']
+        if not isinstance(rule_ids, list) or len(rule_ids) == 0:
+            return jsonify({'success': False, 'error': 'rule_ids must be a non-empty list'}), 400
+        
+        # Query selected rules
+        rules = Rule.query.filter(
+            Rule.customer_id == customer_id,
+            Rule.id.in_(rule_ids)
+        ).order_by(Rule.severity.desc(), Rule.name).all()
+        
+        if not rules:
+            return jsonify({'success': False, 'error': 'No rules found with the provided IDs'}), 404
+        
+        # Prepare data for template
+        template_data = prepare_rule_export_data(rules, customer.name)
+        
+        # Render HTML template
+        html_content = render_template('rule_export_template.html', **template_data)
+        
+        # Create response
+        response = make_response(html_content)
+        response.headers['Content-Type'] = 'text/html'
+        filename = f"rules-{customer.name.replace(' ', '_')}-export.html"
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f"Exported {len(rules)} rules as HTML for customer {customer_id}")
+        return response
+        
+    except NotFound:
+        return jsonify({'success': False, 'error': 'Customer not found'}), 404
+    except Exception as e:
+        logger.error(f"Error exporting rules as HTML for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': f'Failed to export rules: {str(e)}'}), 500
+
+
+@rule_bp.route('/customers/<int:customer_id>/rules/export/pdf', methods=['POST'])
+@require_customer_token
+def export_rules_pdf(customer_id):
+    """Export selected rules as PDF with correlation logic flow diagrams"""
+    try:
+        customer = Customer.query.get_or_404(customer_id)
+        data = request.get_json()
+        
+        if not data or 'rule_ids' not in data:
+            return jsonify({'success': False, 'error': 'Missing rule_ids in request body'}), 400
+        
+        rule_ids = data['rule_ids']
+        if not isinstance(rule_ids, list) or len(rule_ids) == 0:
+            return jsonify({'success': False, 'error': 'rule_ids must be a non-empty list'}), 400
+        
+        # Query selected rules
+        rules = Rule.query.filter(
+            Rule.customer_id == customer_id,
+            Rule.id.in_(rule_ids)
+        ).order_by(Rule.severity.desc(), Rule.name).all()
+        
+        if not rules:
+            return jsonify({'success': False, 'error': 'No rules found with the provided IDs'}), 404
+        
+        # Prepare data for template
+        template_data = prepare_rule_export_data(rules, customer.name)
+        
+        # Render HTML template
+        html_content = render_template('rule_export_template.html', **template_data)
+        
+        # Convert HTML to PDF
+        pdf_content = html_to_pdf(html_content)
+        
+        # Create response
+        response = make_response(pdf_content)
+        response.headers['Content-Type'] = 'application/pdf'
+        filename = f"rules-{customer.name.replace(' ', '_')}-export.pdf"
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f"Exported {len(rules)} rules as PDF for customer {customer_id}")
+        return response
+        
+    except NotFound:
+        return jsonify({'success': False, 'error': 'Customer not found'}), 404
+    except Exception as e:
+        logger.error(f"Error exporting rules as PDF for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': f'Failed to export rules: {str(e)}'}), 500

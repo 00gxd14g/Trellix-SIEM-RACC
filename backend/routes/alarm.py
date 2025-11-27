@@ -1,10 +1,11 @@
-from flask import Blueprint, request, jsonify, current_app, make_response
+from flask import Blueprint, request, jsonify, current_app, make_response, render_template
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from models.customer import db, Customer, Alarm, Rule, RuleAlarmRelationship
 from utils.tenant_auth import require_customer_token, log_tenant_access
 from utils.audit_logger import AuditLogger, AuditAction, audit_log
 from utils.xml_utils import generate_alarms_xml, AlarmGenerator
+from utils.export_utils import prepare_alarm_export_data, html_to_pdf
 from lxml import etree
 import logging
 
@@ -347,3 +348,98 @@ def bulk_delete_alarms(customer_id):
         db.session.rollback()
         logger.error(f"Error bulk deleting alarms for customer {customer_id}: {e}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred.'}), 500
+
+
+@alarm_bp.route('/customers/<int:customer_id>/alarms/export/html', methods=['POST'])
+@require_customer_token
+def export_alarms_html(customer_id):
+    """Export selected alarms as HTML"""
+    try:
+        customer = Customer.query.get_or_404(customer_id)
+        data = request.get_json()
+        
+        if not data or 'alarm_ids' not in data:
+            return jsonify({'success': False, 'error': 'Missing alarm_ids in request body'}), 400
+        
+        alarm_ids = data['alarm_ids']
+        if not isinstance(alarm_ids, list) or len(alarm_ids) == 0:
+            return jsonify({'success': False, 'error': 'alarm_ids must be a non-empty list'}), 400
+        
+        # Query selected alarms
+        alarms = Alarm.query.filter(
+            Alarm.customer_id == customer_id,
+            Alarm.id.in_(alarm_ids)
+        ).order_by(Alarm.severity.desc(), Alarm.name).all()
+        
+        if not alarms:
+            return jsonify({'success': False, 'error': 'No alarms found with the provided IDs'}), 404
+        
+        # Prepare data for template
+        template_data = prepare_alarm_export_data(alarms, customer.name)
+        
+        # Render HTML template
+        html_content = render_template('alarm_export_template.html', **template_data)
+        
+        # Create response
+        response = make_response(html_content)
+        response.headers['Content-Type'] = 'text/html'
+        filename = f"alarms-{customer.name.replace(' ', '_')}-export.html"
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f"Exported {len(alarms)} alarms as HTML for customer {customer_id}")
+        return response
+        
+    except NotFound:
+        return jsonify({'success': False, 'error': 'Customer not found'}), 404
+    except Exception as e:
+        logger.error(f"Error exporting alarms as HTML for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': f'Failed to export alarms: {str(e)}'}), 500
+
+
+@alarm_bp.route('/customers/<int:customer_id>/alarms/export/pdf', methods=['POST'])
+@require_customer_token
+def export_alarms_pdf(customer_id):
+    """Export selected alarms as PDF"""
+    try:
+        customer = Customer.query.get_or_404(customer_id)
+        data = request.get_json()
+        
+        if not data or 'alarm_ids' not in data:
+            return jsonify({'success': False, 'error': 'Missing alarm_ids in request body'}), 400
+        
+        alarm_ids = data['alarm_ids']
+        if not isinstance(alarm_ids, list) or len(alarm_ids) == 0:
+            return jsonify({'success': False, 'error': 'alarm_ids must be a non-empty list'}), 400
+        
+        # Query selected alarms
+        alarms = Alarm.query.filter(
+            Alarm.customer_id == customer_id,
+            Alarm.id.in_(alarm_ids)
+        ).order_by(Alarm.severity.desc(), Alarm.name).all()
+        
+        if not alarms:
+            return jsonify({'success': False, 'error': 'No alarms found with the provided IDs'}), 404
+        
+        # Prepare data for template
+        template_data = prepare_alarm_export_data(alarms, customer.name)
+        
+        # Render HTML template
+        html_content = render_template('alarm_export_template.html', **template_data)
+        
+        # Convert HTML to PDF
+        pdf_content = html_to_pdf(html_content)
+        
+        # Create response
+        response = make_response(pdf_content)
+        response.headers['Content-Type'] = 'application/pdf'
+        filename = f"alarms-{customer.name.replace(' ', '_')}-export.pdf"
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f"Exported {len(alarms)} alarms as PDF for customer {customer_id}")
+        return response
+        
+    except NotFound:
+        return jsonify({'success': False, 'error': 'Customer not found'}), 404
+    except Exception as e:
+        logger.error(f"Error exporting alarms as PDF for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': f'Failed to export alarms: {str(e)}'}), 500

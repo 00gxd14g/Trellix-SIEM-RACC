@@ -13,6 +13,7 @@ import BulkEditModal from '@/components/modals/BulkEditModal';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { getSeverityMeta } from '@/utils/severity';
 import { ruleAPI, customerAPI } from '@/lib/api';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui';
 import {
   FileText,
   Search,
@@ -200,18 +201,41 @@ export default function Rules() {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format = 'xml') => {
     if (!selectedCustomerId) {
       toast({ title: "Select Customer", description: "Choose a customer before exporting rules.", variant: "destructive" });
       return;
     }
 
+    // Check if rules are selected for HTML/PDF export
+    if ((format === 'html' || format === 'pdf') && selectedRules.size === 0) {
+      toast({ title: "No Selection", description: "Please select at least one rule to export as HTML/PDF.", variant: "destructive" });
+      return;
+    }
+
     try {
-      const response = await ruleAPI.exportAll(selectedCustomerId, Array.from(selectedRules));
-      const contentType = response.headers['content-type'] || 'application/xml';
+      let response;
+      let contentType;
+      let fileExtension;
+
+      if (format === 'html') {
+        response = await ruleAPI.exportHtml(selectedCustomerId, Array.from(selectedRules));
+        contentType = 'text/html';
+        fileExtension = 'html';
+      } else if (format === 'pdf') {
+        response = await ruleAPI.exportPdf(selectedCustomerId, Array.from(selectedRules));
+        contentType = 'application/pdf';
+        fileExtension = 'pdf';
+      } else {
+        // XML export (existing functionality)
+        response = await ruleAPI.exportAll(selectedCustomerId, Array.from(selectedRules));
+        contentType = 'application/xml';
+        fileExtension = 'xml';
+      }
+
       const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
       const disposition = response.headers['content-disposition'];
-      let filename = `rules-${new Date().toISOString().split('T')[0]}.xml`;
+      let filename = `rules-${new Date().toISOString().split('T')[0]}.${fileExtension}`;
 
       if (disposition) {
         const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
@@ -228,7 +252,7 @@ export default function Rules() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast({ title: "Export Complete", description: "Rule XML downloaded successfully." });
+      toast({ title: "Export Complete", description: `Rule ${format.toUpperCase()} downloaded successfully.` });
     } catch (error) {
       console.error('Failed to export rules:', error);
       toast({ title: "Export Failed", description: error.response?.data?.error || error.message, variant: "destructive" });
@@ -437,10 +461,31 @@ export default function Rules() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 space-y-2">
+              <p className="text-xs text-muted-foreground">Export as:</p>
+              {[
+                { label: 'XML', value: 'xml' },
+                { label: 'HTML', value: 'html' },
+                { label: 'PDF', value: 'pdf' },
+              ].map(option => (
+                <Button
+                  key={option.value}
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => handleExport(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
             <Upload className="h-4 w-4 mr-2" />
             {importing ? 'Importing...' : 'Import'}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Trellix RACC - Rule Export Report</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "severity-critical": "#D92D20",
+                        "severity-high": "#F79009",
+                        "severity-medium": "#FDB022",
+                        "severity-low": "#32D583",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 24px;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                background: white;
+            }
+        }
+
+        .mermaid {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                flowchart: {
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis'
+                }
+            });
+        });
+    </script>
+</head>
+
+<body class="bg-background-light">
+    <div class="relative flex min-h-screen w-full flex-col">
+        <div class="layout-container flex h-full grow flex-col">
+            <main class="flex flex-1 justify-center py-5">
+                <div class="layout-content-container flex flex-col max-w-[1200px] flex-1 px-4 sm:px-8">
+                    <!-- Page Heading -->
+                    <header class="flex flex-wrap justify-between gap-4 py-8 border-b border-gray-200">
+                        <div class="flex flex-col gap-2">
+                            <p class="text-gray-900 text-4xl font-black leading-tight tracking-[-0.033em]">Rule Export
+                                Report</p>
+                            <p class="text-gray-600 text-base font-normal leading-normal">
+                                Customer: {{ customer_name }} | Generated: {{ generated_date }}
+                            </p>
+                        </div>
+                        <div class="flex items-center">
+                            <p class="text-xl font-bold text-primary">Trellix RACC</p>
+                        </div>
+                    </header>
+
+                    <!-- Summary Section -->
+                    <section class="py-8">
+                        <h2 class="text-gray-900 text-2xl font-bold leading-tight tracking-[-0.015em] mb-5">Summary</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 bg-white">
+                                <p class="text-gray-600 text-sm font-medium leading-normal">Total Rules</p>
+                                <p class="text-gray-900 text-3xl font-bold leading-tight">{{ total_rules }}</p>
+                            </div>
+                            <div class="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 bg-white">
+                                <p class="text-gray-600 text-sm font-medium leading-normal">Critical</p>
+                                <p class="text-severity-critical text-3xl font-bold leading-tight">{{
+                                    severity_critical_count }}</p>
+                            </div>
+                            <div class="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 bg-white">
+                                <p class="text-gray-600 text-sm font-medium leading-normal">High</p>
+                                <p class="text-severity-high text-3xl font-bold leading-tight">{{ severity_high_count }}
+                                </p>
+                            </div>
+                            <div class="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 bg-white">
+                                <p class="text-gray-600 text-sm font-medium leading-normal">Medium/Low</p>
+                                <p class="text-severity-medium text-3xl font-bold leading-tight">{{ severity_other_count
+                                    }}</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Rules Details -->
+                    <section class="py-8">
+                        <h2 class="text-gray-900 text-2xl font-bold leading-tight tracking-[-0.015em] mb-5">Rule Details
+                        </h2>
+                        <div class="space-y-8">
+                            {% for rule in rules %}
+                            <div class="border border-gray-200 rounded-xl bg-white overflow-hidden">
+                                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-bold text-gray-900">{{ rule.name }}</h3>
+                                            <p class="text-sm text-gray-600 font-mono">Rule ID: {{ rule.rule_id }}</p>
+                                        </div>
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium text-white
+                      {% if rule.severity >= 90 %}bg-severity-critical
+                      {% elif rule.severity >= 70 %}bg-severity-high
+                      {% elif rule.severity >= 40 %}bg-severity-medium
+                      {% else %}bg-severity-low{% endif %}">
+                                            Severity: {{ rule.severity }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="px-6 py-4">
+                                    <!-- Rule Metadata -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                        {% if rule.sig_id %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">Signature ID</p>
+                                            <p class="text-base text-gray-900 font-mono">{{ rule.sig_id }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if rule.normid %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">Normalization ID</p>
+                                            <p class="text-base text-gray-900 font-mono">{{ rule.normid }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if rule.rule_type %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">Rule Type</p>
+                                            <p class="text-base text-gray-900">{{ rule.rule_type }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if rule.revision %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">Revision</p>
+                                            <p class="text-base text-gray-900">{{ rule.revision }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if rule.sid %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600">SID</p>
+                                            <p class="text-base text-gray-900">{{ rule.sid }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if rule.description %}
+                                    <div class="mb-6">
+                                        <p class="text-sm font-medium text-gray-600">Description</p>
+                                        <p class="text-base text-gray-900 mt-1 whitespace-pre-wrap">{{ rule.description
+                                            }}</p>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Correlation Logic Flow -->
+                                    {% if rule.mermaid_diagram %}
+                                    <div class="mb-6">
+                                        <p class="text-sm font-medium text-gray-600 mb-3">Correlation Logic Flow</p>
+                                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                            <div class="mermaid">
+                                                {{ rule.mermaid_diagram }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Windows Events -->
+                                    {% if rule.windows_events and rule.windows_events|length > 0 %}
+                                    <div class="mb-6">
+                                        <p class="text-sm font-medium text-gray-600 mb-2">Windows Events</p>
+                                        <div class="bg-gray-50 rounded-lg p-3">
+                                            <ul class="space-y-1">
+                                                {% for event in rule.windows_events %}
+                                                <li class="text-sm text-gray-900">
+                                                    <span class="font-mono font-semibold">{{ event.id }}</span>
+                                                    {% if event.description %} - {{ event.description }}{% endif %}
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Matched Alarms -->
+                                    {% if rule.matched_alarms and rule.matched_alarms|length > 0 %}
+                                    <div class="mb-6">
+                                        <p class="text-sm font-medium text-gray-600 mb-2">Matched Alarms</p>
+                                        <div class="bg-blue-50 rounded-lg p-3">
+                                            <ul class="space-y-1">
+                                                {% for alarm in rule.matched_alarms %}
+                                                <li class="text-sm text-gray-900">
+                                                    <span class="font-semibold">{{ alarm.name }}</span>
+                                                    <span class="text-gray-600 font-mono text-xs ml-2">({{
+                                                        alarm.match_value }})</span>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Raw XML (Collapsible) -->
+                                    <details class="mt-4">
+                                        <summary
+                                            class="text-sm font-medium text-gray-600 cursor-pointer hover:text-gray-900">
+                                            View Raw XML
+                                        </summary>
+                                        <div class="mt-2 bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+                                            <pre class="text-xs"><code>{{ rule.xml_content }}</code></pre>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="w-full mt-auto border-t border-gray-200">
+                <div class="max-w-[1200px] mx-auto py-4 px-4 sm:px-8">
+                    <p class="text-center text-sm text-gray-600">Generated by Trellix RACC - Confidential</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+</body>
+
+</html>

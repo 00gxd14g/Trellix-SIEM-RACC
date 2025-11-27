@@ -167,6 +167,8 @@ export const ruleAPI = {
       responseType: 'blob',
     });
   },
+  exportHtml: (customerId, ruleIds) => api.post(`/customers/${customerId}/rules/export/html`, { rule_ids: ruleIds }, { responseType: 'blob' }),
+  exportPdf: (customerId, ruleIds) => api.post(`/customers/${customerId}/rules/export/pdf`, { rule_ids: ruleIds }, { responseType: 'blob' }),
 };
 
 // Alarm API
@@ -188,6 +190,8 @@ export const alarmAPI = {
       responseType: 'blob',
     });
   },
+  exportHtml: (customerId, alarmIds) => api.post(`/customers/${customerId}/alarms/export/html`, { alarm_ids: alarmIds }, { responseType: 'blob' }),
+  exportPdf: (customerId, alarmIds) => api.post(`/customers/${customerId}/alarms/export/pdf`, { alarm_ids: alarmIds }, { responseType: 'blob' }),
 };
 
 // Analysis API
