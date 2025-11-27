@@ -14,5 +14,17 @@ if __name__ == "__main__":
     
     logger.info(f"Starting production server on {host}:{port}")
     
+    # CRITICAL FIX: Ensure SECRET_KEY is always a string, never a property object
+    import secrets
+    sk = app.config.get("SECRET_KEY")
+    if not isinstance(sk, (str, bytes)):
+        fixed = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+        app.config["SECRET_KEY"] = fixed
+        app.secret_key = fixed
+        logger.warning(f"SECRET_KEY was invalid ({type(sk)}). Overridden to string.")
+    else:
+        app.secret_key = sk
+        logger.info(f"SECRET_KEY OK ({type(sk)})")
+    
     # Serve the application
     serve(app, host=host, port=port)
