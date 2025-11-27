@@ -47,14 +47,7 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SAMESITE = 'Lax'
     
     # Ensure a strong secret key is set in production
-    @property
-    def SECRET_KEY(self):
-        key = os.environ.get('SECRET_KEY')
-        if not key:
-            # Fallback to a random key if not set (warn in logs in real app)
-            import secrets
-            return secrets.token_hex(32)
-        return key
+    SECRET_KEY = os.environ.get('SECRET_KEY') or os.environ.get('SECRET_KEY', 'racc-secret-key-production-2024')
 
 class TestingConfig(Config):
     TESTING = True
