@@ -66,6 +66,29 @@ export default function AlarmDetailModal({ alarm, onClose, onSave }) {
               <p className="text-muted-foreground">Escalation Assignee ID:</p>
               <p className="font-medium">{alarm.esc_assignee_id}</p>
             </div>
+            <div className="col-span-2">
+              <p className="text-muted-foreground mb-1">Windows Event IDs:</p>
+              {alarm.windows_event_ids?.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {alarm.windows_event_ids.map(eventId => {
+                    const eventDetail = alarm.windows_events?.find(e => e.id === eventId);
+                    const description = eventDetail?.description || `Event ${eventId}`;
+                    return (
+                      <Badge
+                        key={eventId}
+                        variant="outline"
+                        className="text-xs font-mono cursor-help"
+                        title={description}
+                      >
+                        {eventId}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="font-medium text-muted-foreground">None</p>
+              )}
+            </div>
           </div>
           <div>
             <p className="text-muted-foreground">Note:</p>

@@ -791,13 +791,24 @@ export default function Rules() {
                         <td className="px-3 py-2">
                           {rule.windows_event_ids?.length ? (
                             <div className="flex flex-wrap gap-1 max-w-[120px]">
-                              {rule.windows_event_ids.slice(0, 3).map((eventId) => (
-                                <Badge key={eventId} variant="outline" className="text-[10px] px-1 py-0 font-mono h-4">
-                                  {eventId}
-                                </Badge>
-                              ))}
+                              {rule.windows_event_ids.slice(0, 3).map((eventId) => {
+                                const eventDetail = rule.windows_events?.find(e => e.id === eventId);
+                                const description = eventDetail?.description || `Event ${eventId}`;
+                                return (
+                                  <Badge
+                                    key={eventId}
+                                    variant="outline"
+                                    className="text-[10px] px-1 py-0 font-mono h-4 cursor-help"
+                                    title={description}
+                                  >
+                                    {eventId}
+                                  </Badge>
+                                );
+                              })}
                               {rule.windows_event_ids.length > 3 && (
-                                <span className="text-[10px] text-muted-foreground">+{rule.windows_event_ids.length - 3}</span>
+                                <span className="text-[10px] text-muted-foreground" title={`+${rule.windows_event_ids.length - 3} more events`}>
+                                  +{rule.windows_event_ids.length - 3}
+                                </span>
                               )}
                             </div>
                           ) : (

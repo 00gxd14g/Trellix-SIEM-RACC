@@ -926,13 +926,24 @@ export default function Alarms() {
                         <td className="px-2 py-1">
                           {alarm.windows_event_ids?.length ? (
                             <div className="flex flex-wrap gap-1 max-w-[120px]">
-                              {alarm.windows_event_ids.slice(0, 3).map((eventId) => (
-                                <Badge key={eventId} variant="outline" className="text-[10px] px-1 py-0 font-mono h-4">
-                                  {eventId}
-                                </Badge>
-                              ))}
+                              {alarm.windows_event_ids.slice(0, 3).map((eventId) => {
+                                const eventDetail = alarm.windows_events?.find(e => e.id === eventId);
+                                const description = eventDetail?.description || `Event ${eventId}`;
+                                return (
+                                  <Badge
+                                    key={eventId}
+                                    variant="outline"
+                                    className="text-[10px] px-1 py-0 font-mono h-4 cursor-help"
+                                    title={description}
+                                  >
+                                    {eventId}
+                                  </Badge>
+                                );
+                              })}
                               {alarm.windows_event_ids.length > 3 && (
-                                <span className="text-[10px] text-muted-foreground">+{alarm.windows_event_ids.length - 3}</span>
+                                <span className="text-[10px] text-muted-foreground" title={`+${alarm.windows_event_ids.length - 3} more events`}>
+                                  +{alarm.windows_event_ids.length - 3}
+                                </span>
                               )}
                             </div>
                           ) : (

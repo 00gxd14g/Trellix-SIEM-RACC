@@ -92,6 +92,29 @@ export default function RuleDetailModal({ rule, onClose, onSave }) {
                   <p className="text-muted-foreground">Created At:</p>
                   <p className="font-medium">{rule.created_at ? new Date(rule.created_at).toLocaleString() : 'N/A'}</p>
                 </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground mb-1">Windows Event IDs:</p>
+                  {rule.windows_event_ids?.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {rule.windows_event_ids.map(eventId => {
+                        const eventDetail = rule.windows_events?.find(e => e.id === eventId);
+                        const description = eventDetail?.description || `Event ${eventId}`;
+                        return (
+                          <Badge
+                            key={eventId}
+                            variant="outline"
+                            className="text-xs font-mono cursor-help"
+                            title={description}
+                          >
+                            {eventId}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="font-medium text-muted-foreground">None</p>
+                  )}
+                </div>
               </div>
               <div>
                 <p className="text-muted-foreground">Description:</p>
