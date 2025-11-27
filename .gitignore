@@ -101,3 +101,7 @@ screenshots/rules_tooltip.png
 example-alarms-rules/rule.xml
 example-alarms-rules/rule.xml
 example-alarms-rules/rule.xml
+
+# SQLite temp files
+*.db-wal
+*.db-shm
