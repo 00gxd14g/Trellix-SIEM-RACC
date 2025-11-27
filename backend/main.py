@@ -78,6 +78,12 @@ def create_app(config_name='default'):
     app = Flask(__name__, static_folder=static_folder, static_url_path=static_url_path)
     app.config.from_object(config[config_name])
     
+    # CRITICAL FIX: Ensure SECRET_KEY is always a string, never a property object
+    import secrets
+    sk = os.getenv("SECRET_KEY") or secrets.token_hex(32)
+    app.config["SECRET_KEY"] = sk if isinstance(sk, (str, bytes)) else secrets.token_hex(32)
+    app.logger.info(f'SECRET_KEY type: {type(app.config["SECRET_KEY"])}')
+    
     # Setup logging
     setup_logging(app)
 
