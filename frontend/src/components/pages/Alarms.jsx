@@ -13,7 +13,6 @@ import AlarmCreateForm from '@/components/forms/AlarmCreateForm';
 import BulkEditModal from '@/components/modals/BulkEditModal';
 import { InlineEdit } from '@/components/ui/inline-edit';
 import { getSeverityMeta } from '@/utils/severity';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import XMLEditor from '@/components/XMLEditor';
 import {
   AlertTriangle,

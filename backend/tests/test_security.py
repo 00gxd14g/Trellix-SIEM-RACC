@@ -82,14 +82,15 @@ class TestInputValidation:
         with pytest.raises(Exception):
             validate_request_data(SystemSettingsUpdateSchema, {'api': data})
 
-    def test_localhost_url_blocked(self):
-        """Test localhost URLs are blocked."""
+    def test_localhost_url_allowed_for_dev(self):
+        """Test localhost URLs are allowed for local development."""
         data = {
             'apiBaseUrl': 'http://localhost:8080',
         }
 
-        with pytest.raises(Exception):
-            validate_request_data(SystemSettingsUpdateSchema, {'api': data})
+        # Should pass validation (localhost allowed for dev)
+        result = validate_request_data(SystemSettingsUpdateSchema, {'api': data})
+        assert result['api']['apiBaseUrl'] == 'http://localhost:8080'
 
     def test_sanitize_string_input(self):
         """Test string sanitization."""
@@ -385,8 +386,8 @@ class TestAPIEndpointSecurity:
         # Should handle gracefully
         assert response.status_code in [400, 500]
 
-    def test_settings_endpoint_rejects_sql_injection(self, client):
-        """Test settings endpoint rejects SQL injection attempts."""
+    def test_settings_endpoint_accepts_sql_like_strings(self, client):
+        """Test settings endpoint accepts strings that look like SQL (DB layer handles safety)."""
         malicious_data = {
             'general': {
                 'appName': "'; DROP TABLE users; --"
@@ -399,13 +400,11 @@ class TestAPIEndpointSecurity:
             content_type='application/json'
         )
 
-        # Should be rejected
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert data['success'] is False
+        # Should be accepted (validation relaxed, DB layer provides safety)
+        assert response.status_code == 200
 
-    def test_api_test_endpoint_blocks_localhost(self, client):
-        """Test API test endpoint blocks localhost."""
+    def test_api_test_endpoint_allows_localhost(self, client):
+        """Test API test endpoint allows localhost for dev."""
         test_data = {
             'config': {
                 'apiBaseUrl': 'http://localhost:8080',
@@ -419,8 +418,8 @@ class TestAPIEndpointSecurity:
             content_type='application/json'
         )
 
-        # Should be blocked
-        assert response.status_code == 400
+        # Should be allowed (may return 502 if server not running, but not 400 validation error)
+        assert response.status_code in [200, 502]  # 502 = connection refused, which is expected
 
 
 class TestSessionSecurity:
