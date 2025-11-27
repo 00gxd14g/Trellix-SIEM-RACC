@@ -12,7 +12,7 @@ from routes.alarm import alarm_bp
 from routes.analysis import analysis_bp
 from routes.logs import logs_bp
 from routes.settings import settings_bp
-from config import config
+from backend.config import config
 import logging
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
