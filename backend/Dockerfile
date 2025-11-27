@@ -19,5 +19,5 @@ COPY . .
 # Expose port
 EXPOSE 5000
 
-# Run the application using Waitress
-CMD ["python", "production_server.py"]
+# Run the application using main.py
+CMD ["python", "main.py"]
