@@ -155,7 +155,7 @@ class AuditLogger:
                 method=context['method'],
                 status=status,
                 status_code=status_code,
-                error_message=error_message,
+                error_message=json.dumps(error_message) if isinstance(error_message, (dict, list)) else error_message,
                 changes=json.dumps(changes) if isinstance(changes, (dict, list)) else changes,
                 audit_metadata=json.dumps(metadata) if isinstance(metadata, (dict, list)) else metadata,
             )

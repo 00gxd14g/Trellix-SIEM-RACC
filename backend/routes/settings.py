@@ -42,6 +42,27 @@ from marshmallow import ValidationError
 
 settings_bp = Blueprint('settings', __name__)
 
+import bleach
+
+def sanitize(obj):
+    """Sanitize input to prevent XSS while preserving structure."""
+    if isinstance(obj, str):
+        return bleach.clean(obj, tags=[], attributes={}, strip=True)
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    return obj
+
+def deep_merge(dst: dict, src: dict):
+    """Deep merge source dict into destination dict."""
+    for k, v in src.items():
+        if isinstance(v, dict) and isinstance(dst.get(k), dict):
+            deep_merge(dst[k], v)
+        else:
+            dst[k] = v
+    return dst
+
 
 def _utcnow():
     """
@@ -257,9 +278,24 @@ def update_system_settings():
             }
         }
     """
-    payload = request.get_json(force=True) or {}
-    
     try:
+        payload = request.get_json(force=True) or {}
+    except Exception:
+        # Strict mode: Invalid JSON should probably be 400, but let's stick to empty dict for now 
+        # unless tests demand 400 for invalid JSON.
+        # The user's test `test_update_system_settings_with_invalid_json` expects 400.
+        # So we should probably let it fail or return 400.
+        # But `request.get_json(force=True)` raises BadRequest which Flask handles as 400 usually?
+        # No, it raises 400 BadRequest.
+        # Let's remove the try-except block if we want strict behavior, 
+        # OR return 400 explicitly.
+        return jsonify({'success': False, 'error': 'Invalid JSON'}), 400
+
+    # Remove sanitization to allow strict validation to catch XSS/etc as 400
+    # payload = sanitize(payload) 
+
+    try:
+        # Strict validation
         payload = validate_request_data(SystemSettingsUpdateSchema, payload)
     except ValidationError as e:
         return jsonify({'success': False, 'error': e.messages}), 400
@@ -268,21 +304,25 @@ def update_system_settings():
 
     if 'general' in payload:
         setting = _ensure_system_setting('general', DEFAULT_GENERAL_SETTINGS)
-        new_data = _merge_with_defaults(DEFAULT_GENERAL_SETTINGS, payload['general'] or {})
+        current_data = deepcopy(setting.data or {})
+        # Deep merge to preserve extra fields and existing values
+        new_data = deep_merge(current_data, payload['general'] or {})
         setting.data = new_data
         setting.updated_at = _utcnow()
         updated_categories['general'] = new_data
 
     if 'api' in payload:
         setting = _ensure_system_setting('api', DEFAULT_API_SETTINGS)
-        new_data = _merge_with_defaults(DEFAULT_API_SETTINGS, payload['api'] or {})
+        current_data = deepcopy(setting.data or {})
+        new_data = deep_merge(current_data, payload['api'] or {})
         setting.data = new_data
         setting.updated_at = _utcnow()
         updated_categories['api'] = new_data
 
     if 'customer_defaults' in payload:
         setting = _ensure_system_setting('customer_defaults', DEFAULT_CUSTOMER_SETTINGS)
-        new_data = _merge_with_defaults(DEFAULT_CUSTOMER_SETTINGS, payload['customer_defaults'] or {})
+        current_data = deepcopy(setting.data or {})
+        new_data = deep_merge(current_data, payload['customer_defaults'] or {})
         setting.data = new_data
         setting.updated_at = _utcnow()
         updated_categories['customer_defaults'] = new_data
@@ -462,37 +502,47 @@ def update_customer_settings(customer_id):
         }
     """
     Customer.query.get_or_404(customer_id)
-    payload = request.get_json(force=True) or {}
+    try:
+        payload = request.get_json(force=True) or {}
+    except Exception:
+        return jsonify({'success': False, 'error': 'Invalid JSON'}), 400
+        
+    # Remove sanitization
+    # payload = sanitize(payload)
     
     try:
         payload = validate_request_data(CustomerSettingsUpdateSchema, payload)
     except ValidationError as e:
         return jsonify({'success': False, 'error': e.messages}), 400
 
-    overrides = payload.get('overrides', {}) or {}
+    overrides_in = payload.get('overrides', {}) or {}
 
-    sanitized = {}
+    customer_setting = _ensure_customer_setting(customer_id)
+    stored = deepcopy(customer_setting.data or {})
+
+    # Apply overrides logic: None -> ignore, '' -> clear
+    for key, value in overrides_in.items():
+        if value is None:
+            continue
+        if isinstance(value, str) and value == '':
+            stored.pop(key, None)
+        else:
+            stored[key] = value
+
+    customer_setting.data = stored
+    customer_setting.updated_at = _utcnow()
+    db.session.commit()
+
     defaults = _merge_with_defaults(
         DEFAULT_CUSTOMER_SETTINGS,
         _ensure_system_setting('customer_defaults', DEFAULT_CUSTOMER_SETTINGS).data,
     )
-
-    for key, value in overrides.items():
-        if value in (None, ''):
-            continue
-        sanitized[key] = value
-
-    customer_setting = _ensure_customer_setting(customer_id)
-    customer_setting.data = sanitized
-    customer_setting.updated_at = _utcnow()
-    db.session.commit()
-
-    effective = _merge_with_defaults(defaults, sanitized)
+    effective = _merge_with_defaults(defaults, stored)
 
     return jsonify({
         'success': True,
         'customer_id': customer_id,
-        'overrides': sanitized,
+        'overrides': stored,
         'effective': effective,
         'defaults': defaults,
     })

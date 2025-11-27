@@ -83,3 +83,7 @@ logs/trellix-api.log
 !frontend/src/lib/api.js
 !frontend/src/lib/utils.js
 backend/database/app.db-shm
+backend/test_failures_3.txt
+backend/test_failures_2.txt
+backend/test_failures.txt
+backend/test_output.txt
