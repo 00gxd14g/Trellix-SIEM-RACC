@@ -178,28 +178,6 @@
 
                                     {% if rule.description %}
                                     <div class="mb-6">
-                                        <p class="text-sm font-medium text-gray-600">Description</p>
-                                        <p class="text-base text-gray-900 mt-1 whitespace-pre-wrap">{{ rule.description
-                                            }}</p>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Correlation Logic Flow -->
-                                    {% if rule.mermaid_diagram %}
-                                    <div class="mb-6">
-                                        <p class="text-sm font-medium text-gray-600 mb-3">Correlation Logic Flow</p>
-                                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                                            <div class="mermaid">
-                                                {{ rule.mermaid_diagram }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Windows Events -->
-                                    {% if rule.windows_events and rule.windows_events|length > 0 %}
-                                    <div class="mb-6">
-                                        <p class="text-sm font-medium text-gray-600 mb-2">Windows Events</p>
                                         <div class="bg-gray-50 rounded-lg p-3">
                                             <ul class="space-y-1">
                                                 {% for event in rule.windows_events %}

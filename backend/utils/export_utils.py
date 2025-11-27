@@ -5,6 +5,8 @@ from lxml import etree
 from typing import List, Dict, Any
 import logging
 
+from backend.utils import signature_mapping
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,6 +61,28 @@ def generate_mermaid_diagram_from_rule_xml(xml_content: str) -> str:
                 value = value_elem[0].get('value', '') if value_elem else ''
                 operator = operator_elem[0].get('value', 'EQUALS') if operator_elem else 'EQUALS'
                 
+                # Resolve Event IDs if applicable
+                event_info_str = ""
+                if comp_type == 'Signature ID' or value.startswith('43-'):
+                    event_ids = signature_mapping.get_event_ids_for_signature(value)
+                    if event_ids:
+                        details = signature_mapping.get_event_details(event_ids)
+                        descriptions = []
+                        for det in details:
+                            desc = det.get('description', '')
+                            eid = det.get('id', '')
+                            if desc:
+                                descriptions.append(f"Event {eid}: {desc}")
+                            else:
+                                descriptions.append(f"Event {eid}")
+                        
+                        if descriptions:
+                            # Limit to first 3 descriptions to avoid huge boxes
+                            display_descs = descriptions[:3]
+                            if len(descriptions) > 3:
+                                display_descs.append(f"... (+{len(descriptions)-3} more)")
+                            event_info_str = "<br/>" + "<br/>".join(display_descs)
+
                 # Truncate long values
                 display_value = value[:30] + '...' if len(value) > 30 else value
                 
@@ -69,9 +93,17 @@ def generate_mermaid_diagram_from_rule_xml(xml_content: str) -> str:
                 # Escape special characters for Mermaid
                 safe_type = comp_type.replace('"', "'")
                 safe_operator = operator.replace('"', "'")
-                safe_value = display_value.replace('"', "'").replace('\n', ' ')
                 
-                diagram_lines.append(f'    {comp_node_id}["Type: {safe_type}<br/>Operator: {safe_operator}<br/>Value: {safe_value}"]')
+                # Wrap long values with <br/>
+                def wrap_text(text, width=30):
+                    return '<br/>'.join([text[i:i+width] for i in range(0, len(text), width)])
+                
+                safe_value = wrap_text(value.replace('"', "'").replace('\n', ' '))
+                
+                # Add Event Info to the node label
+                node_label = f"Type: {safe_type}<br/>Operator: {safe_operator}<br/>Value: {safe_value}{event_info_str}"
+                
+                diagram_lines.append(f'    {comp_node_id}["{node_label}"]')
                 diagram_lines.append(f'    style {comp_node_id} fill:#f3e8ff,stroke:#8b5cf6,stroke-width:2px')
                 
                 # Connect filter to component
@@ -146,8 +178,26 @@ def generate_simple_text_diagram(xml_content: str) -> str:
                 value = value_elem[0].get('value', '') if value_elem else ''
                 operator = operator_elem[0].get('value', 'EQUALS') if operator_elem else 'EQUALS'
                 
+                # Resolve Event IDs if applicable
+                event_info_str = ""
+                if comp_type == 'Signature ID' or value.startswith('43-'):
+                    event_ids = signature_mapping.get_event_ids_for_signature(value)
+                    if event_ids:
+                        details = signature_mapping.get_event_details(event_ids)
+                        descriptions = []
+                        for det in details:
+                            desc = det.get('description', '')
+                            eid = det.get('id', '')
+                            if desc:
+                                descriptions.append(f"Event {eid}: {desc}")
+                            else:
+                                descriptions.append(f"Event {eid}")
+                        
+                        if descriptions:
+                            event_info_str = " -> " + "; ".join(descriptions)
+
                 prefix = "└─" if idx == len(components) - 1 else "├─"
-                lines.append(f"   {prefix} {comp_type}: {operator} '{value}'")
+                lines.append(f"   {prefix} {comp_type}: {operator} '{value}'{event_info_str}")
             
             # Add threshold info
             threshold_elem = match_filter.xpath('.//threshold')
@@ -192,6 +242,7 @@ def html_to_pdf(html_content: str) -> bytes:
         pdf_buffer = BytesIO()
         
         # Additional CSS for better PDF rendering
+        # CRITICAL: Hide Mermaid diagrams in PDF (since JS doesn't run) and show text logic
         pdf_css = CSS(string='''
             @page {
                 size: A4;
@@ -202,6 +253,18 @@ def html_to_pdf(html_content: str) -> bytes:
             }
             .no-print {
                 display: none;
+            }
+            .mermaid {
+                display: none !important;
+            }
+            .text-logic {
+                display: block !important;
+                font-family: monospace;
+                white-space: pre-wrap;
+                background-color: #f3f4f6;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                border: 1px solid #e5e7eb;
             }
         ''')
         
@@ -309,6 +372,10 @@ def prepare_rule_export_data(rules: List[Any], customer_name: str) -> Dict[str, 
         # Generate Mermaid diagram for correlation logic
         mermaid_diagram = generate_mermaid_diagram_from_rule_xml(rule.xml_content)
         rule_dict['mermaid_diagram'] = mermaid_diagram
+        
+        # Generate Text diagram for PDF fallback
+        text_diagram = generate_simple_text_diagram(rule.xml_content)
+        rule_dict['text_diagram'] = text_diagram
         
         # Get matched alarms
         rule_dict['matched_alarms'] = [

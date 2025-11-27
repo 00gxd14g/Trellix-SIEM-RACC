@@ -25,6 +25,9 @@ MSSP'ler için tasarlanmış yapı sayesinde:
 
 ### 4. Analiz ve Raporlama
 - Kural ve alarm ilişkilerini görselleştiren akış diyagramları.
+- **Esnek Raporlama:** Kuralları ve alarmları HTML veya PDF formatında dışa aktarın.
+  - HTML raporlarında interaktif Mermaid diyagramları.
+  - PDF raporlarında yazdırılabilir metin tabanlı mantık şemaları.
 - Müşteri bazlı kural/alarm dağılım grafikleri.
 - Sistem logları ve audit kayıtları.
 
