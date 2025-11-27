@@ -96,3 +96,8 @@ backend/output.txt
 backend/debug_output.txt
 
 check_rules.py
+screenshots/rules.png
+screenshots/rules_tooltip.png
+example-alarms-rules/rule.xml
+example-alarms-rules/rule.xml
+example-alarms-rules/rule.xml
