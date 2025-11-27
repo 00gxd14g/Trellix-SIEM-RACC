@@ -88,6 +88,16 @@ class Rule(db.Model):
     revision = db.Column(db.Integer)
     origin = db.Column(db.Integer)
     action = db.Column(db.Integer)
+    
+    # New fields from schema
+    normid = db.Column(db.String(50))
+    sid = db.Column(db.Integer)
+    rule_class = db.Column(db.Integer)  # Maps to <class>
+    action_initial = db.Column(db.Integer)
+    action_disallowed = db.Column(db.Integer)
+    other_bits_default = db.Column(db.Integer)
+    other_bits_disallowed = db.Column(db.Integer)
+    
     xml_content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=_utcnow)
     
@@ -118,6 +128,13 @@ class Rule(db.Model):
             'revision': self.revision,
             'origin': self.origin,
             'action': self.action,
+            'normid': self.normid,
+            'sid': self.sid,
+            'class': self.rule_class,
+            'action_initial': self.action_initial,
+            'action_disallowed': self.action_disallowed,
+            'other_bits_default': self.other_bits_default,
+            'other_bits_disallowed': self.other_bits_disallowed,
             'xml_content': self.xml_content,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'windows_event_ids': windows_event_ids,
@@ -138,6 +155,7 @@ class Alarm(db.Model):
     assignee_id = db.Column(db.Integer)
     esc_assignee_id = db.Column(db.Integer)
     note = db.Column(db.Text)
+    device_ids = db.Column(db.Text)  # JSON string of device IDs/scopes
     xml_content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=_utcnow)
     updated_at = db.Column(db.DateTime, default=_utcnow, onupdate=_utcnow)
@@ -170,10 +188,12 @@ class Alarm(db.Model):
             'assignee_id': self.assignee_id,
             'esc_assignee_id': self.esc_assignee_id,
             'note': self.note,
+            'device_ids': self.device_ids,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'windows_event_ids': windows_event_ids,
             'windows_events': get_event_details(windows_event_ids),
+            'matched_rules': [{'id': r.id, 'name': r.name, 'rule_id': r.rule_id} for r in self.rules]
         }
 
 class RuleAlarmRelationship(db.Model):

@@ -367,14 +367,12 @@ export default function Rules() {
 
   const handleDownloadRule = async (ruleId, filename) => {
     try {
-      const response = await ruleAPI.getById(selectedCustomerId, ruleId);
-      const xmlContent = response.data.xml_content || response.data.rule?.xml_content;
-      if (!xmlContent) {
-        toast({ title: "Unavailable", description: "Rule XML is not available for download.", variant: "destructive" });
-        return;
-      }
+      // Use exportAll with a single ID to ensure full XML structure with headers
+      const response = await ruleAPI.exportAll(selectedCustomerId, [ruleId]);
 
-      const blob = new Blob([xmlContent], { type: 'application/xml' });
+      const contentType = response.headers['content-type'] || 'application/xml';
+      const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -802,6 +800,7 @@ export default function Rules() {
                               size="sm"
                               onClick={() => handleDownloadRule(rule.id, `${rule.name}.xml`)}
                               className="h-6 w-6 p-0"
+                              title="Export Rule"
                             >
                               <FileDown className="h-3 w-3" />
                             </Button>
@@ -810,6 +809,7 @@ export default function Rules() {
                               size="sm"
                               onClick={() => handleDeleteRule(rule.id)}
                               className="h-6 w-6 p-0 hover:text-destructive"
+                              title="Delete Rule"
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>

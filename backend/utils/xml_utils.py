@@ -15,29 +15,71 @@ def _create_text_element(parent, tag: str, value: Optional[str]):
 
 def generate_rules_xml(rules: List[Any]) -> str:
     """Generate a normalized rule export XML from database models."""
-    root = etree.Element('nitro_policy')
+    root = etree.Element('nitro_policy', 
+                         esm="6F26:4000", 
+                         time="06/05/2025 16:48:08",
+                         user="NGCP", 
+                         build="11.6.14 20250324053645",
+                         model="ETM-VM4", 
+                         version="11006014")
     rules_container = etree.SubElement(root, 'rules')
     rules_container.set('count', str(len(rules)))
 
     for rule in rules:
         rule_elem = etree.SubElement(rules_container, 'rule')
         _create_text_element(rule_elem, 'id', rule.rule_id)
+        _create_text_element(rule_elem, 'normid', rule.normid)
+        if rule.revision is not None:
+            _create_text_element(rule_elem, 'revision', str(rule.revision))
+        _create_text_element(rule_elem, 'sid', str(rule.sid) if rule.sid is not None else '0')
+        _create_text_element(rule_elem, 'class', str(rule.rule_class) if rule.rule_class is not None else '0')
         _create_text_element(rule_elem, 'message', rule.name)
-        _create_text_element(rule_elem, 'description', rule.description)
+        _create_text_element(rule_elem, 'description', rule.description or '')
+        if rule.origin is not None:
+            _create_text_element(rule_elem, 'origin', str(rule.origin))
         if rule.severity is not None:
             _create_text_element(rule_elem, 'severity', str(rule.severity))
         if rule.rule_type is not None:
             _create_text_element(rule_elem, 'type', str(rule.rule_type))
-        if rule.revision is not None:
-            _create_text_element(rule_elem, 'revision', str(rule.revision))
-        if rule.origin is not None:
-            _create_text_element(rule_elem, 'origin', str(rule.origin))
         if rule.action is not None:
             _create_text_element(rule_elem, 'action', str(rule.action))
+        
+        _create_text_element(rule_elem, 'action_initial', str(rule.action_initial) if rule.action_initial is not None else '255')
+        _create_text_element(rule_elem, 'action_disallowed', str(rule.action_disallowed) if rule.action_disallowed is not None else '0')
+        _create_text_element(rule_elem, 'other_bits_default', str(rule.other_bits_default) if rule.other_bits_default is not None else '4')
+        _create_text_element(rule_elem, 'other_bits_disallowed', str(rule.other_bits_disallowed) if rule.other_bits_disallowed is not None else '0')
 
         text_elem = etree.SubElement(rule_elem, 'text')
-        if rule.xml_content:
-            text_elem.text = etree.CDATA(rule.xml_content)
+        
+        # Ensure consistency between outer ID and inner sigid property
+        xml_content = rule.xml_content
+        if xml_content and rule.sig_id:
+            try:
+                # Parse the inner XML
+                inner_root = etree.fromstring(xml_content.encode('utf-8'))
+                
+                # Update ruleset ID
+                if 'id' in inner_root.attrib and rule.rule_id:
+                    inner_root.set('id', rule.rule_id)
+                
+                # Update sigid property
+                # Look for <property><name>sigid</name><value>...</value></property>
+                for prop in inner_root.findall('.//property'):
+                    name_elem = prop.find('name')
+                    if name_elem is not None and name_elem.text == 'sigid':
+                        value_elem = prop.find('value')
+                        if value_elem is not None:
+                            value_elem.text = str(rule.sig_id)
+                        break
+                
+                # Serialize back to string
+                xml_content = etree.tostring(inner_root, encoding='utf-8').decode('utf-8')
+            except Exception as e:
+                # If parsing fails, fallback to original content but log/print error (or just ignore for now)
+                pass
+
+        if xml_content:
+            text_elem.text = etree.CDATA(xml_content)
         else:
             placeholder = f"<ruleset id=\"{rule.rule_id or ''}\" name=\"{rule.name or ''}\"></ruleset>"
             text_elem.text = etree.CDATA(placeholder)
@@ -528,6 +570,25 @@ class AlarmParser:
                 alarm_data['match_value'] = self._get_element_text(condition_data_elem, 'matchValue')
                 alarm_data['condition_type'] = self._get_element_int(condition_data_elem, 'conditionType')
             
+            # Extract deviceIDs
+            device_ids = []
+            alarm_data_elem = alarm_element.find('alarmData')
+            if alarm_data_elem is not None:
+                device_ids_elem = alarm_data_elem.find('deviceIDs')
+                if device_ids_elem is not None:
+                    for device_filter in device_ids_elem.findall('deviceFilter'):
+                        filter_data = {'mask': device_filter.get('mask'), 'constraints': []}
+                        for constraint in device_filter.findall('constraintFilter'):
+                            filter_data['constraints'].append({
+                                'type': constraint.get('type'),
+                                'value': constraint.get('value')
+                            })
+                        device_ids.append(filter_data)
+            
+            if device_ids:
+                import json
+                alarm_data['device_ids'] = json.dumps(device_ids)
+            
             # Store the complete alarm XML
             alarm_data['xml_content'] = etree.tostring(alarm_element, encoding='unicode')
             
@@ -599,6 +660,24 @@ class AlarmGenerator:
         esc_assignee_id = data.get('esc_assignee_id', self.default_esc_assignee_id)
         note = escape(data.get('note', '') or '')
         
+        # Default summary template from schema
+        summary_template = """Alarm Name: [$Rule Message]
+
+The following events were found
+
+[$REPEAT_START]----------
+EventID         = [$Event ID]
+Action          = [$Event Subtype]
+Source User     = [$%UserIDSrc]
+Source IP       = [$Source IP]
+Source Port     = [$Source Port]
+Destination IP  = [$Destination IP]
+Destination Port= [$Destination Port]
+Domain          = [$%External_Hostname]
+Count           = [$Event Count]
+Rule            = [$Rule Message]
+[$REPEAT_END]"""
+
         alarm_xml = f"""<alarm name="{name}" minVersion="{min_version}">
   <alarmData>
     <filters></filters>
@@ -608,11 +687,16 @@ class AlarmGenerator:
     <escEnabled>F</escEnabled>
     <escSeverity>{severity}</escSeverity>
     <escMin>0</escMin>
-    <summaryTemplate></summaryTemplate>
+    <summaryTemplate>{escape(summary_template)}</summaryTemplate>
     <assignee>{assignee_id}</assignee>
-    <assigneeType>0</assigneeType>
+    <assigneeType>1</assigneeType>
     <escAssignee>{esc_assignee_id}</escAssignee>
     <escAssigneeType>0</escAssigneeType>
+    <deviceIDs>
+      <deviceFilter mask="40">
+        <constraintFilter type="ID" value="144116287604260864"/>
+      </deviceFilter>
+    </deviceIDs>
   </alarmData>
   <conditionData>
     <conditionType>{condition_type}</conditionType>
@@ -632,8 +716,41 @@ class AlarmGenerator:
   <actions>
     <actionData>
       <actionType>0</actionType>
+      <actionProcess>9</actionProcess>
+      <actionAttributes>
+        <attribute name="TimeZoneID">77</attribute>
+        <attribute name="SyslogTemplateID">0</attribute>
+        <attribute name="SNMPTemplateID">0</attribute>
+        <attribute name="SMSTemplateID">0</attribute>
+        <attribute name="EmailTemplateID">8206</attribute>
+        <attribute name="UserIDs"></attribute>
+        <attribute name="EmailGroupIDs">1</attribute>
+        <attribute name="EmailIDs"></attribute>
+        <attribute name="MsgEnabled">F</attribute>
+        <attribute name="TimeDateFormat">12</attribute>
+      </actionAttributes>
+    </actionData>
+    <actionData>
+      <actionType>0</actionType>
+      <actionProcess>7</actionProcess>
+      <actionAttributes>
+        <attribute name="AudioFileName">audio/YWxlcnQubXAz</attribute>
+      </actionAttributes>
+    </actionData>
+    <actionData>
+      <actionType>0</actionType>
+      <actionProcess>6</actionProcess>
+      <actionAttributes></actionAttributes>
+    </actionData>
+    <actionData>
+      <actionType>0</actionType>
       <actionProcess>1</actionProcess>
-      <actionAttributes/>
+      <actionAttributes></actionAttributes>
+    </actionData>
+    <actionData>
+      <actionType>1</actionType>
+      <actionProcess>1</actionProcess>
+      <actionAttributes></actionAttributes>
     </actionData>
   </actions>
 </alarm>"""

@@ -117,11 +117,15 @@ def create_alarm(customer_id):
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.error(f"Database error creating alarm for customer {customer_id}: {e}")
-        return jsonify({'success': False, 'error': 'Database error while creating alarm.'}), 500
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error creating alarm for customer {customer_id}: {e}")
+        logger.error(f"Error updating alarm {alarm_id} for customer {customer_id}: {e}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred.'}), 500
+
+def _clean_str(v):
+    if v is None:
+        return None
+    if not isinstance(v, str):
+        return v
+    return v.replace("\x00", "")
 
 @alarm_bp.route('/customers/<int:customer_id>/alarms/<int:alarm_id>', methods=['PUT'])
 @require_customer_token
@@ -135,11 +139,31 @@ def update_alarm(customer_id, alarm_id):
         with db.session.begin_nested():
             alarm = Alarm.query.filter_by(customer_id=customer_id, id=alarm_id).first_or_404()
             old_data = alarm.to_dict()
-            for field, value in data.items():
-                if hasattr(alarm, field):
-                    setattr(alarm, field, value)
             
-            alarm.xml_content = AlarmGenerator().generate_alarm_xml(alarm.to_dict())
+            # Update fields if present in payload
+            if 'name' in data:
+                alarm.name = _clean_str(data['name'])
+            if 'min_version' in data:
+                alarm.min_version = _clean_str(data['min_version'])
+            if 'severity' in data:
+                alarm.severity = data['severity']
+            if 'match_field' in data:
+                alarm.match_field = _clean_str(data['match_field'])
+            if 'match_value' in data:
+                alarm.match_value = _clean_str(data['match_value'])
+            if 'condition_type' in data:
+                alarm.condition_type = data['condition_type']
+            if 'assignee_id' in data:
+                alarm.assignee_id = data['assignee_id']
+            if 'esc_assignee_id' in data:
+                alarm.esc_assignee_id = data['esc_assignee_id']
+            if 'note' in data:
+                alarm.note = _clean_str(data['note'])
+            if 'xml_content' in data:
+                alarm.xml_content = _clean_str(data['xml_content'])
+            
+            # Regenerate XML if needed (optional, depending on requirements)
+            # alarm.xml_content = AlarmGenerator().generate_alarm_xml(alarm.to_dict())
         
         db.session.commit()
 
@@ -282,3 +306,44 @@ def export_alarms(customer_id):
 
 
 
+@alarm_bp.route('/customers/<int:customer_id>/alarms/bulk-delete', methods=['POST'])
+@require_customer_token
+def bulk_delete_alarms(customer_id):
+    """Delete multiple alarms"""
+    data = request.get_json()
+    if not data or 'alarm_ids' not in data:
+        return jsonify({'success': False, 'error': 'Missing alarm_ids'}), 400
+    
+    alarm_ids = data['alarm_ids']
+    if not isinstance(alarm_ids, list):
+         return jsonify({'success': False, 'error': 'alarm_ids must be a list'}), 400
+
+    try:
+        with db.session.begin_nested():
+            # Filter by customer_id for security
+            RuleAlarmRelationship.query.filter(
+                RuleAlarmRelationship.customer_id == customer_id,
+                RuleAlarmRelationship.alarm_id.in_(alarm_ids)
+            ).delete(synchronize_session=False)
+            
+            deleted_count = Alarm.query.filter(
+                Alarm.customer_id == customer_id,
+                Alarm.id.in_(alarm_ids)
+            ).delete(synchronize_session=False)
+        
+        db.session.commit()
+        
+        AuditLogger.log_success(
+            action=AuditAction.ALARM_DELETE,
+            resource_type='alarm',
+            resource_id=0, # Bulk
+            customer_id=customer_id,
+            metadata={'count': deleted_count, 'alarm_ids': alarm_ids}
+        )
+        
+        return jsonify({'success': True, 'deleted_count': deleted_count})
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error bulk deleting alarms for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': 'An unexpected error occurred.'}), 500

@@ -370,8 +370,13 @@ def create_app(config_name='default'):
         app.logger.error(f'Internal error: {error}', exc_info=True)
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
         
+    from werkzeug.exceptions import HTTPException
+
     @app.errorhandler(Exception)
     def handle_exception(error):
+        if isinstance(error, HTTPException):
+            return jsonify({"success": False, "error": error.description}), error.code
+
         app.logger.error(f'Unhandled exception: {error}', exc_info=True)
         return jsonify({'success': False, 'error': str(error)}), 500
 

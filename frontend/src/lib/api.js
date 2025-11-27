@@ -176,6 +176,7 @@ export const alarmAPI = {
   create: (customerId, data) => api.post(`/customers/${customerId}/alarms`, data),
   update: (customerId, alarmId, data) => api.put(`/customers/${customerId}/alarms/${alarmId}`, data),
   delete: (customerId, alarmId) => api.delete(`/customers/${customerId}/alarms/${alarmId}`),
+  bulkDelete: (customerId, alarmIds) => api.post(`/customers/${customerId}/alarms/bulk-delete`, { alarm_ids: alarmIds }),
   getStats: (customerId) => api.get(`/customers/${customerId}/alarms/stats`),
   exportAll: (customerId, ids = []) => {
     const params = {};

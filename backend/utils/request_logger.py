@@ -123,6 +123,17 @@ def log_response(response, request_data):
         log_level = logging.INFO
         status = 'success'
     
+    # Calculate response size safely
+    response_size = 0
+    if not getattr(response, 'direct_passthrough', False):
+        try:
+            data = response.get_data()
+            response_size = len(data) if data else 0
+        except Exception:
+            pass
+    else:
+        response_size = response.content_length or 0
+
     # Build log data
     log_data = {
         'request_id': g.request_id if hasattr(g, 'request_id') else 'unknown',
@@ -131,7 +142,7 @@ def log_response(response, request_data):
         'category': category,
         'status_code': status_code,
         'duration_ms': duration_ms,
-        'response_size': len(response.get_data()) if response.get_data() else 0,
+        'response_size': response_size,
         'client_ip': get_client_ip(),
     }
     
@@ -153,9 +164,10 @@ def log_response(response, request_data):
     
     # Save to audit log for tracking
     try:
-        customer_id = request.view_args.get('customer_id') if request.view_args else None
-        resource_id = request.view_args.get('rule_id') or request.view_args.get('alarm_id') or \
-                     request.view_args.get('file_type') or None
+        view_args = request.view_args or {}
+        customer_id = view_args.get('customer_id')
+        resource_id = view_args.get('rule_id') or view_args.get('alarm_id') or \
+                     view_args.get('file_type') or None
         
         # Determine action from method and endpoint
         action = f"{method}_{endpoint.split('/')[-1].upper()}" if endpoint.split('/')[-1] else method

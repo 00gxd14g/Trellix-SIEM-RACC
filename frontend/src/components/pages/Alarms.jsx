@@ -191,16 +191,13 @@ export default function Alarms() {
     }
 
     try {
-      const promises = Array.from(selectedAlarms).map(alarmId =>
-        alarmAPI.delete(selectedCustomerId, alarmId)
-      );
-      await Promise.all(promises);
-      toast({ title: "Success", description: `${selectedAlarms.size} alarm(s) deleted successfully.` });
+      const response = await alarmAPI.bulkDelete(selectedCustomerId, Array.from(selectedAlarms));
+      toast({ title: "Success", description: `${response.data.deleted_count} alarm(s) deleted successfully.` });
       setSelectedAlarms(new Set());
       fetchAlarms();
     } catch (error) {
       console.error('Failed to delete alarms:', error);
-      toast({ title: "Error", description: "Failed to delete some alarms", variant: "destructive" });
+      toast({ title: "Error", description: error.response?.data?.error || "Failed to delete alarms", variant: "destructive" });
     }
   };
 
@@ -781,6 +778,9 @@ export default function Alarms() {
                         Match Value
                       </th>
                       <th className="px-2 py-1 text-left font-medium text-muted-foreground uppercase tracking-wider">
+                        Matched Rule
+                      </th>
+                      <th className="px-2 py-1 text-left font-medium text-muted-foreground uppercase tracking-wider">
                         Win Event IDs
                       </th>
                       <th className="px-2 py-1 text-left font-medium text-muted-foreground uppercase tracking-wider">
@@ -859,24 +859,25 @@ export default function Alarms() {
                           />
                         </td>
                         <td className="px-2 py-1">
-                          <div className="flex items-center gap-2">
-                            <div className="max-w-[150px] truncate font-mono text-xs" title={alarm.match_value}>
-                              {alarm.match_value}
+                          <InlineEdit
+                            value={alarm.match_value}
+                            onSave={(value) => handleInlineEdit(alarm.id, 'match_value', value)}
+                            placeholder="Match value"
+                            className="text-xs font-mono"
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          {alarm.matched_rules?.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {alarm.matched_rules.map(rule => (
+                                <span key={rule.id} className="text-xs text-blue-600 truncate max-w-[150px]" title={`${rule.name} (${rule.rule_id})`}>
+                                  {rule.name}
+                                </span>
+                              ))}
                             </div>
-                            {alarm.match_value && alarm.match_value.length > 20 && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
-                                    <Info className="h-3 w-3" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 p-2 text-xs break-all">
-                                  <p className="font-semibold mb-1">Match Value:</p>
-                                  {alarm.match_value}
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs italic">None</span>
+                          )}
                         </td>
                         <td className="px-2 py-1">
                           {alarm.windows_event_ids?.length ? (
@@ -903,24 +904,14 @@ export default function Alarms() {
                           />
                         </td>
                         <td className="px-2 py-1">
-                          <div className="flex items-center gap-2">
-                            <div className="max-w-[150px] truncate text-xs" title={alarm.note}>
-                              {alarm.note}
-                            </div>
-                            {alarm.note && alarm.note.length > 20 && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
-                                    <Info className="h-3 w-3" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 p-2 text-xs">
-                                  <p className="font-semibold mb-1">Note:</p>
-                                  <p>{alarm.note}</p>
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </div>
+                          <td className="px-2 py-1">
+                            <InlineEdit
+                              value={alarm.note}
+                              onSave={(value) => handleInlineEdit(alarm.id, 'note', value)}
+                              placeholder="Note"
+                              className="text-xs max-w-[150px]"
+                            />
+                          </td>
                         </td>
                         <td className="px-2 py-1">
                           <div className="flex items-center gap-2">

@@ -506,6 +506,12 @@ def update_customer_settings(customer_id):
         payload = request.get_json(force=True) or {}
     except Exception:
         return jsonify({'success': False, 'error': 'Invalid JSON'}), 400
+
+    from utils.validation_schemas import validate_no_sqli
+    try:
+        validate_no_sqli(payload)
+    except ValidationError as e:
+        return jsonify({'success': False, 'error': e.messages}), 400
         
     # Remove sanitization
     # payload = sanitize(payload)

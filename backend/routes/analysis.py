@@ -264,32 +264,17 @@ def generate_missing_alarms(customer_id):
         logger.error(f"Error generating missing alarms for customer {customer_id}: {e}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred.'}), 500
 
+from utils.analysis_utils import detect_relationships as detect_relationships_util
+
 @analysis_bp.route('/customers/<int:customer_id>/analysis/detect-relationships', methods=['POST'])
 @require_customer_token
 def detect_relationships(customer_id):
     """Detect and create relationships between existing rules and alarms"""
-    try:
-        with db.session.begin_nested():
-            rules = Rule.query.filter(Rule.customer_id == customer_id, Rule.sig_id.isnot(None)).all()
-            alarms = Alarm.query.filter_by(customer_id=customer_id).all()
-            new_relationships = []
-            for rule in rules:
-                expected_match_value = f"47|{rule.sig_id}"
-                for alarm in alarms:
-                    if alarm.match_value == expected_match_value and not RuleAlarmRelationship.query.filter_by(rule_id=rule.id, alarm_id=alarm.id).first():
-                        relationship = RuleAlarmRelationship(customer_id=customer_id, rule_id=rule.id, alarm_id=alarm.id, sig_id=rule.sig_id, match_value=expected_match_value)
-                        db.session.add(relationship)
-                        new_relationships.append(relationship.to_dict())
-        db.session.commit()
-        return jsonify({'success': True, 'message': f'Detected {len(new_relationships)} new relationships', 'new_relationships': new_relationships, 'relationship_count': len(new_relationships)})
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logger.error(f"DB error detecting relationships for customer {customer_id}: {e}")
-        return jsonify({'success': False, 'error': 'Database error during relationship detection.'}), 500
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error detecting relationships for customer {customer_id}: {e}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred.'}), 500
+    result = detect_relationships_util(customer_id)
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
 
 @analysis_bp.route('/customers/<int:customer_id>/analysis/report', methods=['GET'])
 @require_customer_token

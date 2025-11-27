@@ -79,7 +79,7 @@ Tüm sistemi (Backend, Frontend ve Veritabanı) tek komutla ayağa kaldırabilir
 Proje ilk kez çalıştırıldığında, veritabanı dosyası (`backend/database/app.db`) otomatik olarak oluşturulur.
 
 1. **Otomatik Oluşturma:** Uygulama başlatıldığında (`python main.py` veya Docker ile), sistem veritabanı dosyasının varlığını kontrol eder. Eğer yoksa, boş bir veritabanı oluşturur ve gerekli tabloları (`db.create_all()`) hazırlar.
-2. **Veri Doldurma:** Yeni oluşturulan veritabanı boştur. Test verileriyle doldurmak için yukarıdaki "Mock Veri Oluşturma" adımını uygulayabilirsiniz.
+2. **Veri Doldurma:** Yeni oluşturulan veritabanı boştur. Uygulamayı kullanmaya başlamadan önce müşteri ve kural tanımlarını yapmanız gerekmektedir.
 
 ## Proje Yapısı
 
@@ -96,6 +96,6 @@ Proje ilk kez çalıştırıldığında, veritabanı dosyası (`backend/database
 
 ## Ekran Görüntüleri (Screenshots)
 
-| Dashboard | Rules | Alarms | Analysis |
-|:---:|:---:|:---:|:---:|
-| ![Dashboard](screenshot_dashboard.png) | ![Rules](screenshot_rules.png) | ![Alarms](screenshot_alarms.png) | ![Analysis](screenshot_analysis.png) |
+| Analysis | Reporting | Rule Flowchart |
+|:---:|:---:|:---:|
+| ![Analysis](screenshot_analysis.png) | ![Reporting](screenshot_reporting.png) | ![Rule Flowchart](screenshot_flowchart.png) |

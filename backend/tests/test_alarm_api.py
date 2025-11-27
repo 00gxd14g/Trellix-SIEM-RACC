@@ -63,6 +63,23 @@ def test_update_alarm(client, db, setup_customer_with_alarm):
     updated_alarm = db.session.get(Alarm, alarm.id)
     assert updated_alarm.name == 'Updated Alarm Name'
 
+def test_update_alarm_partial_none(client, db, setup_customer_with_alarm):
+    """Test updating an alarm with partial data where some fields might be None (simulating issue)."""
+    customer, alarm = setup_customer_with_alarm
+    
+    # Payload with only name, other fields implicitly None in logic if not handled
+    update_data = {'name': 'Partial Update'}
+    response = client.put(f'/api/customers/{customer.id}/alarms/{alarm.id}',
+                          headers={'X-Customer-ID': str(customer.id)},
+                          json=update_data)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['success'] is True
+    assert data['alarm']['name'] == 'Partial Update'
+    # Severity should remain unchanged
+    assert data['alarm']['severity'] == 90
+
 def test_delete_alarm(client, db, setup_customer_with_alarm):
     """Test deleting an alarm."""
     customer, alarm = setup_customer_with_alarm

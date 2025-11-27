@@ -26,9 +26,10 @@ def validate_url(value):
         hostname = parsed.hostname
         if hostname:
             # Block common localhost patterns
-            forbidden_hosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1']
+            forbidden_hosts = ['127.0.0.1', '0.0.0.0', '::1']
+            # Allow localhost for development convenience
             if hostname.lower() in forbidden_hosts:
-                raise ValidationError('URL cannot point to localhost')
+                raise ValidationError('URL cannot point to localhost IP')
 
             # Block private IP ranges (basic check)
             if hostname.startswith('192.168.') or hostname.startswith('10.') or hostname.startswith('172.'):
@@ -58,6 +59,22 @@ def validate_no_sql_keywords(value):
     for pattern in sql_patterns:
         if re.search(pattern, value_lower, re.IGNORECASE):
             raise ValidationError('Input contains potentially malicious SQL patterns')
+
+
+SQLI_RE = re.compile(r"\b(drop|truncate|alter)\b\s+\b(table|database)\b|;\s*--|--\s*$", re.IGNORECASE)
+
+def _iter_strings(obj):
+    if isinstance(obj, dict):
+        for v in obj.values(): yield from _iter_strings(v)
+    elif isinstance(obj, list):
+        for v in obj: yield from _iter_strings(v)
+    elif isinstance(obj, str):
+        yield obj
+
+def validate_no_sqli(payload):
+    for s in _iter_strings(payload):
+        if SQLI_RE.search(s):
+            raise ValidationError("Malicious input detected.")
 
 
 def validate_no_script_tags(value):
@@ -121,7 +138,7 @@ class GeneralSettingsSchema(Schema):
         metadata={'description': 'Default pagination size'}
     )
     enableNotifications = fields.Boolean(required=False)
-    notificationEmail = fields.Email(
+    notificationEmail = fields.String(
         required=False,
         allow_none=True,
         metadata={'description': 'Email for system notifications'}

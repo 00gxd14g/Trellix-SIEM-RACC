@@ -578,6 +578,17 @@ def validate_file(customer_id, file_type):
             'error': 'An unexpected error occurred during file validation.'
         }), 500
 
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Database error processing file for customer {customer_id}: {e}")
+        return {'success': False, 'errors': ['A database error occurred during file processing.'], 'warnings': [], 'items_processed': 0}
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Unexpected error processing file for customer {customer_id}: {e}", exc_info=True)
+        return {'success': False, 'errors': [f'An unexpected error occurred: {str(e)}'], 'warnings': [], 'items_processed': 0}
+
+from utils.analysis_utils import detect_relationships
+
 def _process_uploaded_file(customer_id, file_path, file_type):
     """Process and validate uploaded XML file"""
     validator = XMLValidator()
@@ -586,12 +597,6 @@ def _process_uploaded_file(customer_id, file_path, file_type):
     items_processed = 0
     
     try:
-        # Clear previous data for this file type
-        if file_type == 'rule':
-            Rule.query.filter_by(customer_id=customer_id).delete(synchronize_session=False)
-        elif file_type == 'alarm':
-            Alarm.query.filter_by(customer_id=customer_id).delete(synchronize_session=False)
-
         # Validate and parse
         parser = RuleParser() if file_type == 'rule' else AlarmParser()
         validator_func = validator.validate_rule_xml if file_type == 'rule' else validator.validate_alarm_xml
@@ -618,9 +623,36 @@ def _process_uploaded_file(customer_id, file_path, file_type):
             items_processed = len(data_list)
             model = Rule if file_type == 'rule' else Alarm
             
-            for data_item in data_list:
-                instance = model(customer_id=customer_id, **data_item)
-                db.session.add(instance)
+            # For rules, we might still want to replace all or handle similarly, but user asked about alarms.
+            # Keeping rule behavior as is (delete all) for now unless requested otherwise, 
+            # but for alarms we will upsert.
+            # Actually, to be safe and consistent, let's stick to the previous behavior for rules (delete all)
+            # as rules are usually a full set. Alarms might be incremental.
+            
+            if file_type == 'rule':
+                Rule.query.filter_by(customer_id=customer_id).delete(synchronize_session=False)
+                for data_item in data_list:
+                    instance = model(customer_id=customer_id, **data_item)
+                    db.session.add(instance)
+            elif file_type == 'alarm':
+                # Upsert logic for alarms
+                for data_item in data_list:
+                    match_value = data_item.get('match_value')
+                    if match_value:
+                        existing_alarm = Alarm.query.filter_by(customer_id=customer_id, match_value=match_value).first()
+                        if existing_alarm:
+                            # Update existing alarm
+                            for key, value in data_item.items():
+                                setattr(existing_alarm, key, value)
+                        else:
+                            # Create new alarm
+                            instance = model(customer_id=customer_id, **data_item)
+                            db.session.add(instance)
+                    else:
+                        # If no match_value (shouldn't happen for valid alarms), just add? 
+                        # But schema requires it.
+                        instance = model(customer_id=customer_id, **data_item)
+                        db.session.add(instance)
             
             # Log parsing result
             AuditLogger.log_success(
@@ -632,6 +664,13 @@ def _process_uploaded_file(customer_id, file_path, file_type):
                     'items_processed': items_processed
                 }
             )
+            
+            # Commit changes before relationship detection
+            db.session.commit()
+            
+            # Detect relationships
+            detect_relationships(customer_id)
+            
         else:
             errors.extend(validation_result.get('errors', []))
 

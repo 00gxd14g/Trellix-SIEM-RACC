@@ -198,6 +198,23 @@ export default function Settings() {
     toast({ title: 'Settings Reset', description: 'System settings have been reset to defaults.' });
   };
 
+  const formatErrorMessage = (error) => {
+    if (typeof error === 'string') return error;
+    if (!error) return 'Unknown error';
+    if (Array.isArray(error)) return error.join(', ');
+    if (typeof error === 'object') {
+      return Object.entries(error)
+        .map(([key, value]) => {
+          const formattedValue = formatErrorMessage(value);
+          // If the key is generic like "error" or "message", just show the value
+          if (key === 'error' || key === 'message') return formattedValue;
+          return `${key}: ${formattedValue}`;
+        })
+        .join('; ');
+    }
+    return String(error);
+  };
+
   const handleSaveSystem = async () => {
     setSystemSaving(true);
     try {
@@ -220,7 +237,7 @@ export default function Settings() {
       setSystemDirty(false);
     } catch (error) {
       console.error('Failed to save system settings:', error);
-      const message = error.response?.data?.error || 'Failed to save system settings.';
+      const message = formatErrorMessage(error.response?.data?.error || 'Failed to save system settings.');
       toast({
         title: 'Error',
         description: message,
@@ -250,7 +267,7 @@ export default function Settings() {
         toast({ title: 'API Connection Failed', description: payload.error || 'Unable to reach API.', variant: 'destructive' });
       }
     } catch (error) {
-      const message = error.response?.data?.error || error.message;
+      const message = formatErrorMessage(error.response?.data?.error || error.message);
       setApiTestResult({ status: 'error', message });
       toast({ title: 'API Connection Failed', description: message, variant: 'destructive' });
     }
@@ -300,7 +317,8 @@ export default function Settings() {
       toast({ title: 'Success', description: 'Customer settings saved successfully.' });
     } catch (error) {
       console.error('Failed to save customer settings:', error);
-      toast({ title: 'Error', description: 'Failed to save customer settings.', variant: 'destructive' });
+      const message = formatErrorMessage(error.response?.data?.error || 'Failed to save customer settings.');
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 

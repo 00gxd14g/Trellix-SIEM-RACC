@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 
 from .customer import db
 
@@ -59,8 +60,8 @@ class AuditLog(db.Model):
             "status": self.status,
             "status_code": self.status_code,
             "error_message": self.error_message,
-            "changes": self.changes,
+            "changes": json.loads(self.changes) if self.changes else None,
             # Expose as "metadata" in API payloads for continuity
-            "metadata": self.audit_metadata,
+            "metadata": json.loads(self.audit_metadata) if self.audit_metadata else None,
         }
 
